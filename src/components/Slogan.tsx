@@ -12,6 +12,7 @@ export default Slogan;
 
 const Wrapper = styled.div`
     background: #1F1F1F;
+    width: 100%;
     max-width: 1104px;
     height: 46px;
     display: flex;

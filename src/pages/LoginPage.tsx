@@ -8,6 +8,10 @@ import GoogleIcon from "../assets/images/google.svg";
 const LoginPage = () => {
     const navigate = useNavigate();
 
+    const handleLogin = () => {
+        navigate("/signup");
+    };
+
     return (
         <Wrapper>
             <Container>
@@ -27,7 +31,7 @@ const LoginPage = () => {
                         <LogoContainer>
                             <LogoBlackImg src={LogoBlack} alt="MORE TALE" />
                         </LogoContainer>
-                        <GoogleButton type="button" onClick={() => navigate("/signup")}>
+                        <GoogleButton type="button" onClick={handleLogin}>
                             <GoogleIconImg src={GoogleIcon} alt="Google" />
                             Sign up with Google
                         </GoogleButton>
