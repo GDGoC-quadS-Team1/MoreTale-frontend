@@ -6,6 +6,7 @@ type BaseProps = {
   borderRadius?: number | string;
   fontSize?: number | string;
   backgroundColor?: string;
+  color?: string;
   disabled?: boolean;
   className?: string;
 };
@@ -36,6 +37,7 @@ const YellowButton = (props: YellowButtonProps) => {
     borderRadius = 4,
     fontSize = 16,
     backgroundColor = "#FFDE21",
+    color = "#1F1F1F",
     disabled = false,
     className,
   } = props;
@@ -46,6 +48,7 @@ const YellowButton = (props: YellowButtonProps) => {
     $borderRadius: toPx(borderRadius),
     $fontSize: toPx(fontSize),
     $backgroundColor: backgroundColor,
+    $color: color,
   };
 
   if (props.type === "text-input") {
@@ -62,6 +65,7 @@ const YellowButton = (props: YellowButtonProps) => {
           placeholder={props.placeholder ?? ""}
           disabled={disabled}
           $fontSize={styleProps.$fontSize}
+          $color={styleProps.$color}
         />
       </TextInputWrapper>
     );
@@ -90,6 +94,7 @@ type StyleProps = {
   $borderRadius: string;
   $fontSize: string;
   $backgroundColor: string;
+  $color: string;
 };
 
 const Button = styled.button<StyleProps>`
@@ -104,7 +109,7 @@ const Button = styled.button<StyleProps>`
   border: none;
   border-radius: ${(p) => p.$borderRadius};
   background: ${(p) => p.$backgroundColor};
-  color: #1f1f1f;
+  color: ${(p) => p.$color};
   font-family: "Pretendard Variable";
   font-size: ${(p) => p.$fontSize};
   font-weight: 700;
@@ -142,17 +147,21 @@ const TextInputWrapper = styled.div<StyleProps>`
   cursor: text;
 `;
 
-const Input = styled.input<{ $fontSize: string }>`
+const Input = styled.input<{ $fontSize: string; $color: string }>`
   border: none;
   background: transparent;
-  color: #1F1F1F;
+  color: ${(p) => p.$color};
   font-size: ${(p) => p.$fontSize};
   font-weight: 700;
+  line-height: 1;
   text-align: center;
   outline: none;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
 
   &::placeholder {
-    color: #1F1F1F;
+    color: ${(p) => p.$color};
     text-align: center;
   }
 `;
