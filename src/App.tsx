@@ -4,13 +4,13 @@ import LoginPage from './pages/LoginPage';
 import SignUpPage from './pages/SignUpPage';
 import ProfileComplete from './pages/ProfileComplete';
 import HomePage from './pages/HomePage';
-import IntroPage from './pages/fairy-tale/IntroPage';
-import PromptPage from './pages/fairy-tale/PromptPage';
-import LanguagePage from './pages/fairy-tale/LanguagePage';
-import LoadingPage from './pages/fairy-tale/LoadingPage';
-import CompletePage from './pages/fairy-tale/CompletePage';
-import ReadPage from './pages/fairy-tale/ReadPage';
-import FinishPage from './pages/fairy-tale/FinishPage';
+import IntroPage from './pages/tale/IntroPage';
+import PromptPage from './pages/tale/PromptPage';
+import LanguagePage from './pages/tale/LanguagePage';
+import LoadingPage from './pages/tale/LoadingPage';
+import CompletePage from './pages/tale/CompletePage';
+import ReadPage from './pages/tale/ReadPage';
+import FinishPage from './pages/tale/FinishPage';
 
 function App() {
   return (
@@ -21,13 +21,13 @@ function App() {
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/profile-complete" element={<ProfileComplete />} />
         <Route path="/home" element={<HomePage />} />
-        <Route path="/fairy-tale/intro" element={<IntroPage />} />
-        <Route path="/fairy-tale/prompt" element={<PromptPage />} />
-        <Route path="/fairy-tale/language" element={<LanguagePage />} />
-        <Route path="/fairy-tale/loading" element={<LoadingPage />} />
-        <Route path="/fairy-tale/complete" element={<CompletePage />} />
-        <Route path="/fairy-tale/read" element={<ReadPage />} />
-        <Route path="/fairy-tale/finish" element={<FinishPage />} />
+        <Route path="/tale/intro" element={<IntroPage />} />
+        <Route path="/tale/prompt" element={<PromptPage />} />
+        <Route path="/tale/language" element={<LanguagePage />} />
+        <Route path="/tale/loading" element={<LoadingPage />} />
+        <Route path="/tale/complete" element={<CompletePage />} />
+        <Route path="/tale/read" element={<ReadPage />} />
+        <Route path="/tale/finish" element={<FinishPage />} />
       </Routes>
     </BrowserRouter>
   )

@@ -7,7 +7,7 @@ const ProfileComplete = () => {
     const navigate = useNavigate();
 
     const goToTale = () => {
-        navigate("/fairy-tale/complete");
+        navigate("/tale/complete");
     };
 
     const goToHome = () => {
