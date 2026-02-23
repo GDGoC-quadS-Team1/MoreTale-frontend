@@ -110,9 +110,8 @@ const Button = styled.button<StyleProps>`
   border-radius: ${(p) => p.$borderRadius};
   background: ${(p) => p.$backgroundColor};
   color: ${(p) => p.$color};
-  font-family: "Pretendard Variable";
   font-size: ${(p) => p.$fontSize};
-  font-weight: 700;
+  font-weight: 800;
   line-height: 1;
   cursor: pointer;
   box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.25);
