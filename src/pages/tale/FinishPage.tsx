@@ -25,7 +25,12 @@ const FinishPage = () => {
                 </InfoContainer>
 
                 <BookContainer>
-                    <NavButton $position="left" type="button" aria-label="" onClick={() => navigate("/tale/read")}>
+                    <NavButton
+                        $position="left"
+                        type="button"
+                        aria-label=""
+                        onClick={() => navigate("/tale/read", { state: { startFromLast: true } })}
+                    >
                         <Image height={26} src={ArrowLeftIcon} alt="" />
                     </NavButton>
 
