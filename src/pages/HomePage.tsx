@@ -119,7 +119,7 @@ const Content = styled.div`
     flex-direction: row;
     align-items: flex-end;
     justify-content: space-between;
-    padding: 20px 72px;
+    padding: 60px 72px;
 `;
 
 const TextContainer = styled.div`
