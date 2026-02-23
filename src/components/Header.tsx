@@ -1,16 +1,19 @@
+import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import LogoBlack from '../assets/images/logo-black.svg';
 import Profile from '../assets/images/profile.svg';
 
 const Header = () => {
+    const navigate = useNavigate();
+
     return (
         <HeaderWrapper>
             <LeftContainer>
-                <Logo type="button" aria-label="">
+                <Logo type="button" aria-label="" onClick={() => navigate("/home")}>
                     <LogoImg src={LogoBlack} alt="" />
                 </Logo>
                 <MenuContainer>
-                    <Menu>TALE</Menu>
+                    <Menu onClick={() => navigate("/tale/intro")}>TALE</Menu>
                     <Menu>LIBRARY</Menu>
                     <Menu>QUIZ</Menu>
                     <Menu>ME</Menu>
@@ -30,7 +33,7 @@ const HeaderWrapper = styled.header`
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 50px 72px;
+    padding: 50px 72px 35px 72px;
     background: transparent;
     box-sizing: border-box;
     gap: 40px;
