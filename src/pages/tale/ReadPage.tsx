@@ -9,7 +9,7 @@ import ArrowLeftIcon from "../../assets/images/tale/arrow-left.svg";
 import ArrowRightIcon from "../../assets/images/tale/arrow-right.svg";
 import SpeakerIcon from "../../assets/images/tale/speaker.svg";
 import BookmarkIcon from "../../assets/images/tale/bookmark.svg";
-import Image1 from "../../assets/mid-demo/page_01.png";
+import Image1 from "../../assets/mid-demo/illustrations/page_01.png";
 
 const ReadPage = () => {
     const navigate = useNavigate();
