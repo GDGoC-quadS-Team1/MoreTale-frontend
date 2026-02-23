@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import Header from "../../components/Header";
 import Book from "../../assets/images/tale/book.png";
@@ -37,8 +37,10 @@ const SLIDES = [
 
 const ReadPage = () => {
     const navigate = useNavigate();
-    
-    const [currentSlide, setCurrentSlide] = useState(0);
+    const location = useLocation();
+
+    const initialSlide = location.state?.startFromLast ? SLIDES.length - 1 : 0;
+    const [currentSlide, setCurrentSlide] = useState(initialSlide);
     const audioPrimaryRef = useRef<HTMLAudioElement | null>(null);
     const audioSecondaryRef = useRef<HTMLAudioElement | null>(null);
 
@@ -47,13 +49,8 @@ const ReadPage = () => {
     const isLastSlide = currentSlide === SLIDES.length - 1;
 
     const handleLeftClick = () => {
-        if (isLastSlide) {
-            navigate("/tale/finish");
-        } else if (isFirstSlide) {
-            navigate(-1);
-        } else {
-            setCurrentSlide((prev) => prev - 1);
-        }
+        if (isFirstSlide) return;
+        setCurrentSlide((prev) => prev - 1);
     };
 
     const handleRightClick = () => {
@@ -94,7 +91,7 @@ const ReadPage = () => {
                 {/* 내용 */}
                 <BookContainer>
                     <Bookmark src={BookmarkIcon} alt="" />
-                    <NavButton $position="left" type="button" aria-label="" onClick={handleLeftClick}>
+                    <NavButton $position="left" type="button" aria-label="" onClick={handleLeftClick} disabled={isFirstSlide}>
                         <Image height={26} src={ArrowLeftIcon} alt="" />
                     </NavButton>
                     <NavButton $position="right" type="button" aria-label="" onClick={handleRightClick}>
@@ -256,6 +253,10 @@ const NavButton = styled.button<{ $position: "left" | "right" }>`
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
     padding: 0;
     z-index: 10;
+
+    &:disabled {
+        cursor: not-allowed;
+    }
 `;
 
 const PageImage = styled.img`
