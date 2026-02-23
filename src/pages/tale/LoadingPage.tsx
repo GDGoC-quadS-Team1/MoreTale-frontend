@@ -56,7 +56,7 @@ const Container = styled.div`
     align-items: center;
     justify-content: center;
     gap: 32px;
-    padding-bottom: 100px;
+    padding-bottom: 40px;
 `;
 
 const Title = styled.div`
