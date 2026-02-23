@@ -1,0 +1,180 @@
+{
+    "title_primary": "달토끼와 츠키토끼의 빛나는 선물",
+    "title_secondary": "月うさぎとつきうさぎの輝く贈り物",
+    "author_name": "AI Storyteller",
+    "primary_language": "Korean",
+    "secondary_language": "Japanese",
+    "image_style": "Enchanting storybook art, soft and warm colors",
+    "main_character_design": "Dali, a graceful white moon rabbit with long, pointed ears and kind dark eyes, wearing a light blue traditional Korean hanbok-inspired vest and skirt. Tsuki, a gentle white moon rabbit with round, soft ears and warm brown eyes, wearing a soft pink traditional Japanese kimono-inspired robe. Both rabbits are roughly 5 years old in appearance.",
+    "illustration_prefix": "Enchanting storybook art, soft and warm colors, Dali, a graceful white moon rabbit with long, pointed ears and kind dark eyes, wearing a light blue traditional Korean hanbok-inspired vest and skirt. Tsuki, a gentle white moon rabbit with round, soft ears and warm brown eyes, wearing a soft pink traditional Japanese kimono-inspired robe. Both rabbits are roughly 5 years old in appearance.",
+    "pages": [
+        {
+            "page_number": 1,
+            "text_primary": "깊은 밤, 언제나 빛나던 달이 오늘은 보이지 않았어요. 하늘은 온통 깜깜했죠. 모두가 고개를 갸웃거렸답니다.",
+            "text_secondary": "深い夜、いつも輝いていた月が、今日は見えませんでした。空は真っ暗でした。みんなが首をかしげました。",
+            "illustration_prompt": "Enchanting storybook art, soft and warm colors, Dali, a graceful white moon rabbit with long, pointed ears and kind dark eyes, wearing a light blue traditional Korean hanbok-inspired vest and skirt. Tsuki, a gentle white moon rabbit with round, soft ears and warm brown eyes, wearing a soft pink traditional Japanese kimono-inspired robe. Both rabbits are roughly 5 years old in appearance., A dark night sky with no moon, a few twinkling stars barely visible, a small village below is covered in shadows. A sleepy, worried expression on a little rabbit peeking out from a window. Soft, dim blues and purples dominate the scene. Wide shot.",
+            "illustration_scene_prompt": "A dark night sky with no moon, a few twinkling stars barely visible, a small village below is covered in shadows. A sleepy, worried expression on a little rabbit peeking out from a window. Soft, dim blues and purples dominate the scene. Wide shot."
+        },
+        {
+            "page_number": 2,
+            "text_primary": "저 멀리 달나라에 사는 달토끼 달리도 깜짝 놀랐어요. 밤마다 떡을 찧어야 하는데, 달빛이 없으니 아무것도 보이지 않았거든요.",
+            "text_secondary": "遠い月の国に住む月うさぎのダリもびっくりしました。毎晩お餅をつかなければならないのに、月の光がないと何も見えなかったからです。",
+            "illustration_prompt": "Enchanting storybook art, soft and warm colors, Dali, a graceful white moon rabbit with long, pointed ears and kind dark eyes, wearing a light blue traditional Korean hanbok-inspired vest and skirt. Tsuki, a gentle white moon rabbit with round, soft ears and warm brown eyes, wearing a soft pink traditional Japanese kimono-inspired robe. Both rabbits are roughly 5 years old in appearance., Dali stands in her traditional Korean-style house on the moon, looking out a window with a sad, bewildered expression. Her mortar and pestle sit idly by. The room is softly lit by a single, gentle paper lantern, casting warm, golden light. Medium shot.",
+            "illustration_scene_prompt": "Dali stands in her traditional Korean-style house on the moon, looking out a window with a sad, bewildered expression. Her mortar and pestle sit idly by. The room is softly lit by a single, gentle paper lantern, casting warm, golden light. Medium shot."
+        },
+        {
+            "page_number": 3,
+            "text_primary": "달리는 통통 뛰며 이리저리 살폈어요. '어디에 숨었지? 내 달님!' 달리 아씨는 걱정이 가득했어요.",
+            "text_secondary": "ダリはぴょんぴょん跳ねてあちこち探しました。「どこに隠れたんだろう？私の月様！」ダリお嬢様は心配でいっぱいでした。",
+            "illustration_prompt": "Enchanting storybook art, soft and warm colors, Dali, a graceful white moon rabbit with long, pointed ears and kind dark eyes, wearing a light blue traditional Korean hanbok-inspired vest and skirt. Tsuki, a gentle white moon rabbit with round, soft ears and warm brown eyes, wearing a soft pink traditional Japanese kimono-inspired robe. Both rabbits are roughly 5 years old in appearance., Dali is hopping around her moon home, looking under a small, carved wooden table and behind a traditional screen, her face filled with anxiety. A small, unlit lantern hangs from the ceiling. Gentle, soft moonlight would normally stream in, but now only dim, internal light. Close-up on Dali's worried face. Sound: Hop-hop.",
+            "illustration_scene_prompt": "Dali is hopping around her moon home, looking under a small, carved wooden table and behind a traditional screen, her face filled with anxiety. A small, unlit lantern hangs from the ceiling. Gentle, soft moonlight would normally stream in, but now only dim, internal light. Close-up on Dali's worried face. Sound: Hop-hop."
+        },
+        {
+            "page_number": 4,
+            "text_primary": "또 다른 달나라에 사는 츠키토끼 츠키도 마찬가지였어요. 달빛이 없어 모찌를 찧을 수가 없었지요. 그는 꽤나 당황한 표정이었답니다.",
+            "text_secondary": "また別の月の国に住む月うさぎのツキも同じでした。月の光がないとお餅がつけません。彼はとても戸惑った顔をしていました。",
+            "illustration_prompt": "Enchanting storybook art, soft and warm colors, Dali, a graceful white moon rabbit with long, pointed ears and kind dark eyes, wearing a light blue traditional Korean hanbok-inspired vest and skirt. Tsuki, a gentle white moon rabbit with round, soft ears and warm brown eyes, wearing a soft pink traditional Japanese kimono-inspired robe. Both rabbits are roughly 5 years old in appearance., Tsuki stands in his traditional Japanese-style home on the moon, looking perplexed at the darkened window. His mochi mallet rests beside a large wooden mortar. The room is dimly lit by the faint, indirect glow of a paper shoji lantern, casting soft, golden-yellow light. Medium shot.",
+            "illustration_scene_prompt": "Tsuki stands in his traditional Japanese-style home on the moon, looking perplexed at the darkened window. His mochi mallet rests beside a large wooden mortar. The room is dimly lit by the faint, indirect glow of a paper shoji lantern, casting soft, golden-yellow light. Medium shot."
+        },
+        {
+            "page_number": 5,
+            "text_primary": "츠키는 쿵쿵 땅을 찧어보았지만, 아무 소용이 없었어요. 달빛 없이 모찌는 만들어지지 않는 법이니까요.",
+            "text_secondary": "ツキはどんどん地面を叩いてみましたが、何の意味もありませんでした。月の光なしではお餅は作れないからです。",
+            "illustration_prompt": "Enchanting storybook art, soft and warm colors, Dali, a graceful white moon rabbit with long, pointed ears and kind dark eyes, wearing a light blue traditional Korean hanbok-inspired vest and skirt. Tsuki, a gentle white moon rabbit with round, soft ears and warm brown eyes, wearing a soft pink traditional Japanese kimono-inspired robe. Both rabbits are roughly 5 years old in appearance., Tsuki, with a frustrated and worried expression, taps his large wooden mochi mallet on the ground inside his darkened house. His small, round ears are slightly drooped. A traditional Japanese tea set sits on a low table nearby. Dim, internal lantern light casts long shadows. Close-up on Tsuki's tapping mallet and worried face. Sound: Tap-tap.",
+            "illustration_scene_prompt": "Tsuki, with a frustrated and worried expression, taps his large wooden mochi mallet on the ground inside his darkened house. His small, round ears are slightly drooped. A traditional Japanese tea set sits on a low table nearby. Dim, internal lantern light casts long shadows. Close-up on Tsuki's tapping mallet and worried face. Sound: Tap-tap."
+        },
+        {
+            "page_number": 6,
+            "text_primary": "그때! 커다란 구름 괴물이 달을 통째로 가리고 있었어요! 호랑이 몸에 오니 얼굴을 한 무시무시한 괴물이었죠.",
+            "text_secondary": "その時！大きな雲の怪物が月を丸ごと隠していました！虎の体に鬼の顔をした恐ろしい怪物でした。",
+            "illustration_prompt": "Enchanting storybook art, soft and warm colors, Dali, a graceful white moon rabbit with long, pointed ears and kind dark eyes, wearing a light blue traditional Korean hanbok-inspired vest and skirt. Tsuki, a gentle white moon rabbit with round, soft ears and warm brown eyes, wearing a soft pink traditional Japanese kimono-inspired robe. Both rabbits are roughly 5 years old in appearance., A colossal, menacing Cloud Monster, with a striped tiger body and a fierce red Oni-mask-like face, looms large in the night sky, completely obscuring the moon. Its smoky form is dark purple and grey, with glowing red eyes. The monster is seen from a distance, casting a vast, terrifying shadow over the world. Wide shot. Sound: Grrr.",
+            "illustration_scene_prompt": "A colossal, menacing Cloud Monster, with a striped tiger body and a fierce red Oni-mask-like face, looms large in the night sky, completely obscuring the moon. Its smoky form is dark purple and grey, with glowing red eyes. The monster is seen from a distance, casting a vast, terrifying shadow over the world. Wide shot. Sound: Grrr."
+        },
+        {
+            "page_number": 7,
+            "text_primary": "용감한 달리 아씨는 혼자서 달을 찾아 떠나기로 결심했어요. 깡총깡총 뛰어가며 어둠을 헤치고 나아갔지요.",
+            "text_secondary": "勇敢なダリお嬢様は、一人で月を探しに出かけることを決意しました。ぴょんぴょん跳ねて、暗闇をかき分けて進みました。",
+            "illustration_prompt": "Enchanting storybook art, soft and warm colors, Dali, a graceful white moon rabbit with long, pointed ears and kind dark eyes, wearing a light blue traditional Korean hanbok-inspired vest and skirt. Tsuki, a gentle white moon rabbit with round, soft ears and warm brown eyes, wearing a soft pink traditional Japanese kimono-inspired robe. Both rabbits are roughly 5 years old in appearance., Dali, with a determined yet slightly nervous expression, hops along a winding path on the moon's surface. The landscape is rocky and barren, illuminated only by a faint, ghostly glow from a distant, hidden light source. Her ears are perked up. Medium shot. Sound: Hop-hop.",
+            "illustration_scene_prompt": "Dali, with a determined yet slightly nervous expression, hops along a winding path on the moon's surface. The landscape is rocky and barren, illuminated only by a faint, ghostly glow from a distant, hidden light source. Her ears are perked up. Medium shot. Sound: Hop-hop."
+        },
+        {
+            "page_number": 8,
+            "text_primary": "츠키도 가만히 있을 수 없었어요. 어둠이 싫었거든요. 그도 길을 나섰답니다. 깡총깡총.",
+            "text_secondary": "ツキもじっとしていられませんでした。暗闇が嫌だったからです。彼も道に出ました。ぴょんぴょん。",
+            "illustration_prompt": "Enchanting storybook art, soft and warm colors, Dali, a graceful white moon rabbit with long, pointed ears and kind dark eyes, wearing a light blue traditional Korean hanbok-inspired vest and skirt. Tsuki, a gentle white moon rabbit with round, soft ears and warm brown eyes, wearing a soft pink traditional Japanese kimono-inspired robe. Both rabbits are roughly 5 years old in appearance., Tsuki, with a curious and slightly anxious expression, bounces along a different path on the moon's surface. He carries his small mochi mallet. The ground is grey and dusty, with tiny craters visible. The overall lighting is dim and mysterious. Medium shot. Sound: Bounce, Boing.",
+            "illustration_scene_prompt": "Tsuki, with a curious and slightly anxious expression, bounces along a different path on the moon's surface. He carries his small mochi mallet. The ground is grey and dusty, with tiny craters visible. The overall lighting is dim and mysterious. Medium shot. Sound: Bounce, Boing."
+        },
+        {
+            "page_number": 9,
+            "text_primary": "어둠 속을 헤치고 가던 달리와 츠키는 깜짝 놀랐어요. 똑같이 달을 찾아 나선 다른 토끼를 만났으니까요!",
+            "text_secondary": "暗闇を進んでいたダリとツキは、びっくりしました。同じように月を探しに出かけた別のうさぎに出会ったからです！",
+            "illustration_prompt": "Enchanting storybook art, soft and warm colors, Dali, a graceful white moon rabbit with long, pointed ears and kind dark eyes, wearing a light blue traditional Korean hanbok-inspired vest and skirt. Tsuki, a gentle white moon rabbit with round, soft ears and warm brown eyes, wearing a soft pink traditional Japanese kimono-inspired robe. Both rabbits are roughly 5 years old in appearance., Dali and Tsuki stand frozen, wide-eyed with surprise, having just encountered each other on a dark, winding path on the moon. Their ears are perked high. A small, distant nebula provides a faint, ethereal glow. Medium shot. Sound: Gasp!",
+            "illustration_scene_prompt": "Dali and Tsuki stand frozen, wide-eyed with surprise, having just encountered each other on a dark, winding path on the moon. Their ears are perked high. A small, distant nebula provides a faint, ethereal glow. Medium shot. Sound: Gasp!"
+        },
+        {
+            "page_number": 10,
+            "text_primary": "달리는 하늘색 한복을 입고, 츠키는 분홍색 기모노를 입고 있었어요. 서로 다른 옷에 살짝 어색했지만, 같은 걱정을 나눴어요.",
+            "text_secondary": "ダリは水色の韓服を着ていて、ツキはピンクの着物を着ていました。お互いの違う服に少し戸惑いましたが、同じ心配を分かち合いました。",
+            "illustration_prompt": "Enchanting storybook art, soft and warm colors, Dali, a graceful white moon rabbit with long, pointed ears and kind dark eyes, wearing a light blue traditional Korean hanbok-inspired vest and skirt. Tsuki, a gentle white moon rabbit with round, soft ears and warm brown eyes, wearing a soft pink traditional Japanese kimono-inspired robe. Both rabbits are roughly 5 years old in appearance., Dali and Tsuki stand facing each other, a bit shyly, on a moon crater rim. They observe each other's distinct traditional outfits with gentle curiosity. The background is a vast, dark space with tiny distant stars, providing a soft, almost imperceptible blue light. Medium shot.",
+            "illustration_scene_prompt": "Dali and Tsuki stand facing each other, a bit shyly, on a moon crater rim. They observe each other's distinct traditional outfits with gentle curiosity. The background is a vast, dark space with tiny distant stars, providing a soft, almost imperceptible blue light. Medium shot."
+        },
+        {
+            "page_number": 11,
+            "text_primary": "달리가 말했어요. \"구름 괴물이 달을 가렸어요! 밤이 너무 깜깜해졌어요!\" 그녀는 손으로 하늘을 가리켰어요.",
+            "text_secondary": "ダリが言いました。「雲の怪物が月を隠したの！夜が真っ暗になっちゃったわ！」彼女は手で空を指しました。",
+            "illustration_prompt": "Enchanting storybook art, soft and warm colors, Dali, a graceful white moon rabbit with long, pointed ears and kind dark eyes, wearing a light blue traditional Korean hanbok-inspired vest and skirt. Tsuki, a gentle white moon rabbit with round, soft ears and warm brown eyes, wearing a soft pink traditional Japanese kimono-inspired robe. Both rabbits are roughly 5 years old in appearance., Dali, with a concerned expression, points a paw towards the dark sky where the Cloud Monster is faintly visible in the distance. Tsuki listens intently, his ears slightly tilted, showing understanding. They are standing on a dusty, grey lunar landscape. A faint, cool blue light emanates from far-off, unidentifiable celestial bodies. Medium shot.",
+            "illustration_scene_prompt": "Dali, with a concerned expression, points a paw towards the dark sky where the Cloud Monster is faintly visible in the distance. Tsuki listens intently, his ears slightly tilted, showing understanding. They are standing on a dusty, grey lunar landscape. A faint, cool blue light emanates from far-off, unidentifiable celestial bodies. Medium shot."
+        },
+        {
+            "page_number": 12,
+            "text_primary": "츠키도 고개를 끄덕이며 말했어요. \"네, 저도 봤어요. 달빛이 없으니 모찌를 만들 수 없어서 모두가 슬퍼할 거예요.\" 츠키는 한숨을 쉬었어요.",
+            "text_secondary": "ツキも頷いて言いました。「ええ、僕も見ました。月の光がないとお餅が作れないから、みんなが悲しむでしょう。」ツキはため息をつきました。",
+            "illustration_prompt": "Enchanting storybook art, soft and warm colors, Dali, a graceful white moon rabbit with long, pointed ears and kind dark eyes, wearing a light blue traditional Korean hanbok-inspired vest and skirt. Tsuki, a gentle white moon rabbit with round, soft ears and warm brown eyes, wearing a soft pink traditional Japanese kimono-inspired robe. Both rabbits are roughly 5 years old in appearance., Tsuki nods sadly, his eyes reflecting genuine worry, as he looks at the dark, empty sky. Dali watches him with empathy. Tsuki's mochi mallet rests on the ground beside him. The distant, ominous silhouette of the Cloud Monster is barely visible. The light is still dim, with a hint of purple. Medium shot. Sound: Sigh.",
+            "illustration_scene_prompt": "Tsuki nods sadly, his eyes reflecting genuine worry, as he looks at the dark, empty sky. Dali watches him with empathy. Tsuki's mochi mallet rests on the ground beside him. The distant, ominous silhouette of the Cloud Monster is barely visible. The light is still dim, with a hint of purple. Medium shot. Sound: Sigh."
+        },
+        {
+            "page_number": 13,
+            "text_primary": "두 토끼는 서로를 바라보았어요. 달빛을 되찾고 싶다는 같은 마음이 그들의 눈빛에 반짝였어요. 그래, 함께라면 할 수 있을 거야!",
+            "text_secondary": "二匹のうさぎは互いを見つめました。月の光を取り戻したいという同じ気持ちが、彼らの瞳にきらめきました。そうだ、一緒ならできるはず！",
+            "illustration_prompt": "Enchanting storybook art, soft and warm colors, Dali, a graceful white moon rabbit with long, pointed ears and kind dark eyes, wearing a light blue traditional Korean hanbok-inspired vest and skirt. Tsuki, a gentle white moon rabbit with round, soft ears and warm brown eyes, wearing a soft pink traditional Japanese kimono-inspired robe. Both rabbits are roughly 5 years old in appearance., Dali and Tsuki make eye contact, a spark of determination and shared resolve growing in their expressions. They both share a subtle nod, their body language aligning. The dark lunar landscape stretches around them, but a faint, hopeful glow begins to appear on the horizon. Medium shot. Sound: Nod, Hmm.",
+            "illustration_scene_prompt": "Dali and Tsuki make eye contact, a spark of determination and shared resolve growing in their expressions. They both share a subtle nod, their body language aligning. The dark lunar landscape stretches around them, but a faint, hopeful glow begins to appear on the horizon. Medium shot. Sound: Nod, Hmm."
+        },
+        {
+            "page_number": 14,
+            "text_primary": "그때, 구름 괴물이 갑자기 나타나 크게 울부짖었어요! \"크르르르르! 감히 내 달을 넘보느냐!\" 무서운 소리에 두 토끼는 움찔했죠.",
+            "text_secondary": "その時、雲の怪物が突然現れて大きく咆哮しました！「グルルルル！よくも私の月を狙うな！」恐ろしい声に二匹のうさぎはぴくりとしました。",
+            "illustration_prompt": "Enchanting storybook art, soft and warm colors, Dali, a graceful white moon rabbit with long, pointed ears and kind dark eyes, wearing a light blue traditional Korean hanbok-inspired vest and skirt. Tsuki, a gentle white moon rabbit with round, soft ears and warm brown eyes, wearing a soft pink traditional Japanese kimono-inspired robe. Both rabbits are roughly 5 years old in appearance., The Cloud Monster, with its tiger-like body and Oni face, suddenly appears closer, roaring ferociously, its red eyes glowing menacingly. Dali and Tsuki flinch back in fear, their ears flattening. Dark, swirling clouds surround the monster. A dramatic, dark grey and red color palette. Wide shot. Sound: ROAR! Grrr!",
+            "illustration_scene_prompt": "The Cloud Monster, with its tiger-like body and Oni face, suddenly appears closer, roaring ferociously, its red eyes glowing menacingly. Dali and Tsuki flinch back in fear, their ears flattening. Dark, swirling clouds surround the monster. A dramatic, dark grey and red color palette. Wide shot. Sound: ROAR! Grrr!"
+        },
+        {
+            "page_number": 15,
+            "text_primary": "달리는 용기를 내어 앞으로 나섰어요. \"괴물님, 저희가 찧은 맛있는 떡이에요. 달빛을 돌려주시면 함께 나눠 먹어요!\" 떡을 내밀었죠.",
+            "text_secondary": "ダリは勇気を出して前に出ました。「怪物様、私たちがついた美味しいお餅です。月の光を返してくれたら、一緒に食べましょう！」お餅を差し出しました。",
+            "illustration_prompt": "Enchanting storybook art, soft and warm colors, Dali, a graceful white moon rabbit with long, pointed ears and kind dark eyes, wearing a light blue traditional Korean hanbok-inspired vest and skirt. Tsuki, a gentle white moon rabbit with round, soft ears and warm brown eyes, wearing a soft pink traditional Japanese kimono-inspired robe. Both rabbits are roughly 5 years old in appearance., Dali, showing great bravery, holds out a beautifully glowing white rice cake towards the imposing Cloud Monster. Her expression is earnest and kind. Tsuki watches nervously from behind her. The monster looks down with a skeptical gaze. The rice cake emits a soft, warm light. Medium shot. Sound: Pang!",
+            "illustration_scene_prompt": "Dali, showing great bravery, holds out a beautifully glowing white rice cake towards the imposing Cloud Monster. Her expression is earnest and kind. Tsuki watches nervously from behind her. The monster looks down with a skeptical gaze. The rice cake emits a soft, warm light. Medium shot. Sound: Pang!"
+        },
+        {
+            "page_number": 16,
+            "text_primary": "하지만 괴물은 떡을 콧방귀를 뀌며 밀쳐냈어요. \"흥! 난 이런 것보다 달빛이 더 좋단 말이다!\" 괴물은 여전히 달을 움켜쥐고 있었어요.",
+            "text_secondary": "しかし、怪物は餅を鼻で笑いながら突き返しました。「フン！私はこんなものより月の光の方が好きなんだ！」怪物は依然として月を掴んでいました。",
+            "illustration_prompt": "Enchanting storybook art, soft and warm colors, Dali, a graceful white moon rabbit with long, pointed ears and kind dark eyes, wearing a light blue traditional Korean hanbok-inspired vest and skirt. Tsuki, a gentle white moon rabbit with round, soft ears and warm brown eyes, wearing a soft pink traditional Japanese kimono-inspired robe. Both rabbits are roughly 5 years old in appearance., The Cloud Monster scoffs loudly, swatting away the offered rice cake with a cloud-like paw. Its expression is grumpy and dismissive. Dali looks disheartened, while Tsuki looks worried. The monster is still covering the moon. Dark, angry clouds swirl around the monster. Medium shot. Sound: Humph! Grumble.",
+            "illustration_scene_prompt": "The Cloud Monster scoffs loudly, swatting away the offered rice cake with a cloud-like paw. Its expression is grumpy and dismissive. Dali looks disheartened, while Tsuki looks worried. The monster is still covering the moon. Dark, angry clouds swirl around the monster. Medium shot. Sound: Humph! Grumble."
+        },
+        {
+            "page_number": 17,
+            "text_primary": "이번엔 츠키가 나섰어요. \"달님은 모두의 친구예요. 괴물님도 달빛 아래서 모두와 함께 행복하게 살 수 있어요.\" 츠키는 조심스럽게 설명했어요.",
+            "text_secondary": "今度はツキが進み出ました。「お月様はみんなの友達です。怪物様も月の光の下でみんなと一緒に幸せに暮らせますよ。」ツキは優しく説明しました。",
+            "illustration_prompt": "Enchanting storybook art, soft and warm colors, Dali, a graceful white moon rabbit with long, pointed ears and kind dark eyes, wearing a light blue traditional Korean hanbok-inspired vest and skirt. Tsuki, a gentle white moon rabbit with round, soft ears and warm brown eyes, wearing a soft pink traditional Japanese kimono-inspired robe. Both rabbits are roughly 5 years old in appearance., Tsuki, with a calm and gentle expression, looks up at the towering Cloud Monster, trying to reason with it. His hands are clasped politely. Dali stands supportively beside him. The monster's face shows confusion, but no willingness to move. A subtle, hopeful light tries to peek through the monster's cloudy form. Medium shot. Sound: Whisper, Murmur.",
+            "illustration_scene_prompt": "Tsuki, with a calm and gentle expression, looks up at the towering Cloud Monster, trying to reason with it. His hands are clasped politely. Dali stands supportively beside him. The monster's face shows confusion, but no willingness to move. A subtle, hopeful light tries to peek through the monster's cloudy form. Medium shot. Sound: Whisper, Murmur."
+        },
+        {
+            "page_number": 18,
+            "text_primary": "괴물은 으스스한 웃음을 터뜨렸어요. \"난 혼자가 좋아! 달빛은 다 내 거야!\" 괴물은 달빛을 더 꽉 움켜쥐었어요.",
+            "text_secondary": "怪物は不気味な笑い声を上げました。「私は一人の方が好きだ！月の光は全部私のものだ！」怪物は月の光をもっと強く掴みました。",
+            "illustration_prompt": "Enchanting storybook art, soft and warm colors, Dali, a graceful white moon rabbit with long, pointed ears and kind dark eyes, wearing a light blue traditional Korean hanbok-inspired vest and skirt. Tsuki, a gentle white moon rabbit with round, soft ears and warm brown eyes, wearing a soft pink traditional Japanese kimono-inspired robe. Both rabbits are roughly 5 years old in appearance., The Cloud Monster lets out a chilling laugh, its Oni face contorted in a selfish grin. It pulls the obscured moon even tighter into its cloudy grasp. Dali and Tsuki look disheartened and a little scared, their shoulders slumped. The light grows even darker around the monster. Wide shot. Sound: Cackle, Shake.",
+            "illustration_scene_prompt": "The Cloud Monster lets out a chilling laugh, its Oni face contorted in a selfish grin. It pulls the obscured moon even tighter into its cloudy grasp. Dali and Tsuki look disheartened and a little scared, their shoulders slumped. The light grows even darker around the monster. Wide shot. Sound: Cackle, Shake."
+        },
+        {
+            "page_number": 19,
+            "text_primary": "달리와 츠키는 서로를 바라보았어요. 마음속 깊이 '우리는 하나!'라는 생각이 스쳤죠. 서로 다른 도구가 있었지만, 같은 마음이 있었으니까요.",
+            "text_secondary": "ダリとツキは互いを見つめました。心の奥底で「私たちは一つ！」という思いがよぎりました。それぞれ違う道具を持っていましたが、同じ気持ちがあったのですから。",
+            "illustration_prompt": "Enchanting storybook art, soft and warm colors, Dali, a graceful white moon rabbit with long, pointed ears and kind dark eyes, wearing a light blue traditional Korean hanbok-inspired vest and skirt. Tsuki, a gentle white moon rabbit with round, soft ears and warm brown eyes, wearing a soft pink traditional Japanese kimono-inspired robe. Both rabbits are roughly 5 years old in appearance., Dali and Tsuki look at each other with renewed determination and a shared, knowing smile. A tiny, bright spark of an idea literally appears between them, connecting their gazes. The background is still dark, but there's a sense of impending change. Close-up on their faces. Sound: Click! Aha!",
+            "illustration_scene_prompt": "Dali and Tsuki look at each other with renewed determination and a shared, knowing smile. A tiny, bright spark of an idea literally appears between them, connecting their gazes. The background is still dark, but there's a sense of impending change. Close-up on their faces. Sound: Click! Aha!"
+        },
+        {
+            "page_number": 20,
+            "text_primary": "달리는 절구와 절구공이를 들고, 츠키는 떡방망이를 들었어요. 둘은 힘껏 달을 가린 구름 괴물을 향해 쿵! 쿵! 찧기 시작했어요.",
+            "text_secondary": "ダリは臼と杵を手に取り、ツキは餅つきの槌を手に取りました。二人は力いっぱい、月を隠している雲の怪物に向かってドン！ドン！と突き始めました。",
+            "illustration_prompt": "Enchanting storybook art, soft and warm colors, Dali, a graceful white moon rabbit with long, pointed ears and kind dark eyes, wearing a light blue traditional Korean hanbok-inspired vest and skirt. Tsuki, a gentle white moon rabbit with round, soft ears and warm brown eyes, wearing a soft pink traditional Japanese kimono-inspired robe. Both rabbits are roughly 5 years old in appearance., Dali, holding her mortar and pestle, and Tsuki, with his mochi mallet, stand side-by-side, vigorously pounding their tools towards the Cloud Monster. Each pound creates a small burst of light and sparks. Their faces are focused and determined. The monster looks surprised and a little annoyed. Dynamic, energetic lighting with bright flashes. Medium shot. Sound: Thump-thump! POUND!",
+            "illustration_scene_prompt": "Dali, holding her mortar and pestle, and Tsuki, with his mochi mallet, stand side-by-side, vigorously pounding their tools towards the Cloud Monster. Each pound creates a small burst of light and sparks. Their faces are focused and determined. The monster looks surprised and a little annoyed. Dynamic, energetic lighting with bright flashes. Medium shot. Sound: Thump-thump! POUND!"
+        },
+        {
+            "page_number": 21,
+            "text_primary": "쿵! 쿵! 달리의 절구와 츠키의 떡방망이가 함께 움직이자, 빛나는 기운이 하늘로 솟아올랐어요. 구름 괴물이 움찔하며 뒤로 물러났죠.",
+            "text_secondary": "ドン！ドン！ダリの臼とツキの餅つきの槌が一緒に動くと、輝く光のオーラが空へと舞い上がりました。雲の怪物はびくっと震えながら後ろに下がりました。",
+            "illustration_prompt": "Enchanting storybook art, soft and warm colors, Dali, a graceful white moon rabbit with long, pointed ears and kind dark eyes, wearing a light blue traditional Korean Korean hanbok-inspired vest and skirt. Tsuki, a gentle white moon rabbit with round, soft ears and warm brown eyes, wearing a soft pink traditional Japanese kimono-inspired robe. Both rabbits are roughly 5 years old in appearance., Dali and Tsuki continue to pound their tools, and a powerful, shimmering wave of golden light emanates from them, pushing back the dark, swirling clouds of the Cloud Monster. The monster recoils, its features showing discomfort and retreat. The sky is beginning to lighten. Wide shot. Sound: Shimmer, Whoosh.",
+            "illustration_scene_prompt": "Enchanting storybook art, soft and warm colors, Dali, a graceful white moon rabbit with long, pointed ears and kind dark eyes, wearing a light blue traditional Korean Korean hanbok-inspired vest and skirt. Tsuki, a gentle white moon rabbit with round, soft ears and warm brown eyes, wearing a soft pink traditional Japanese kimono-inspired robe. Both rabbits are roughly 5 years old in appearance., Dali and Tsuki continue to pound their tools, and a powerful, shimmering wave of golden light emanates from them, pushing back the dark, swirling clouds of the Cloud Monster. The monster recoils, its features showing discomfort and retreat. The sky is beginning to lighten. Wide shot. Sound: Shimmer, Whoosh."
+        },
+        {
+            "page_number": 22,
+            "text_primary": "함께 힘을 모으자 구름 괴물의 몸이 점점 작아지더니, '펑!' 하고 사라져 버렸어요. 드디어 달이 얼굴을 내밀었답니다!",
+            "text_secondary": "力を合わせると、雲の怪物の体がだんだん小さくなり、「ポン！」と消えてしまいました。ついに月が顔を出したのです！",
+            "illustration_prompt": "Enchanting storybook art, soft and warm colors, Dali, a graceful white moon rabbit with long, pointed ears and kind dark eyes, wearing a light blue traditional Korean hanbok-inspired vest and skirt. Tsuki, a gentle white moon rabbit with round, soft ears and warm brown eyes, wearing a soft pink traditional Japanese kimono-inspired robe. Both rabbits are roughly 5 years old in appearance., The Cloud Monster is shown shrinking rapidly, dissolving into wisps of smoke and light, with a surprised and defeated expression. The moon, partially revealed, peeks out from behind where the monster once was. Dali and Tsuki stand victorious, smiling brightly. Bright, triumphant light fills the scene. Medium shot. Sound: Poof! Whoosh.",
+            "illustration_scene_prompt": "The Cloud Monster is shown shrinking rapidly, dissolving into wisps of smoke and light, with a surprised and defeated expression. The moon, partially revealed, peeks out from behind where the monster once was. Dali and Tsuki stand victorious, smiling brightly. Bright, triumphant light fills the scene. Medium shot. Sound: Poof! Whoosh."
+        },
+        {
+            "page_number": 23,
+            "text_primary": "밤하늘에 동그란 달이 환하게 빛나기 시작했어요. 달빛을 되찾은 달리와 츠키는 활짝 웃으며 서로의 손을 잡았죠. '야호!'",
+            "text_secondary": "夜空に丸い月が明るく輝き始めました。月の光を取り戻したダリとツキは、満面の笑みで手を取り合いました。「やったー！」",
+            "illustration_prompt": "Enchanting storybook art, soft and warm colors, Dali, a graceful white moon rabbit with long, pointed ears and kind dark eyes, wearing a light blue traditional Korean hanbok-inspired vest and skirt. Tsuki, a gentle white moon rabbit with round, soft ears and warm brown eyes, wearing a soft pink traditional Japanese kimono-inspired robe. Both rabbits are roughly 5 years old in appearance., The full, round moon shines brilliantly in the night sky, casting a warm, silvery glow over the entire lunar landscape. Dali and Tsuki stand together, holding paws, beaming with joy and pride. Their faces are illuminated by the beautiful moonlight. A peaceful and celebratory atmosphere. Wide shot. Sound: Yay! Glow!",
+            "illustration_scene_prompt": "The full, round moon shines brilliantly in the night sky, casting a warm, silvery glow over the entire lunar landscape. Dali and Tsuki stand together, holding paws, beaming with joy and pride. Their faces are illuminated by the beautiful moonlight. A peaceful and celebratory atmosphere. Wide shot. Sound: Yay! Glow!"
+        },
+        {
+            "page_number": 24,
+            "text_primary": "비록 이름과 옷은 달라도, 소중한 마음은 하나였어요. 세상 아래 지우도 다시 돌아온 달빛을 보며 환하게 웃었답니다.",
+            "text_secondary": "たとえ名前や服が違っても、大切な心は一つでした。地上にいるジウも、戻ってきた月の光を見て明るく笑いました。",
+            "illustration_prompt": "Enchanting storybook art, soft and warm colors, Dali, a graceful white moon rabbit with long, pointed ears and kind dark eyes, wearing a light blue traditional Korean hanbok-inspired vest and skirt. Tsuki, a gentle white moon rabbit with round, soft ears and warm brown eyes, wearing a soft pink traditional Japanese kimono-inspired robe. Both rabbits are roughly 5 years old in appearance., Dali and Tsuki stand side-by-side on a moon hill, looking down at Earth, where a young Korean child named Jiwoo, around 5 years old, with short black hair and wearing pajamas, looks up at the now brightly shining moon from a window, a happy, relieved smile on their face. The moonlight beautifully illuminates Jiwoo's room and the entire scene, creating a sense of wonder and connection. Wide shot. Sound: Sparkle, Ahhh.",
+            "illustration_scene_prompt": "Dali and Tsuki stand side-by-side on a moon hill, looking down at Earth, where a young Korean child named Jiwoo, around 5 years old, with short black hair and wearing pajamas, looks up at the now brightly shining moon from a window, a happy, relieved smile on their face. The moonlight beautifully illuminates Jiwoo's room and the entire scene, creating a sense of wonder and connection. Wide shot. Sound: Sparkle, Ahhh."
+        }
+    ]
+}

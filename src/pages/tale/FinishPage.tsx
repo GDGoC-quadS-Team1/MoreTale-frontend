@@ -48,6 +48,7 @@ const FinishPage = () => {
                                 height={68}
                                 fontSize={28}
                                 borderRadius={5}
+                                onClick={() => navigate("/tale/read")}
                             >
                                 다시 읽으러가기
                             </YellowButton>
@@ -197,7 +198,7 @@ const LeftSection = styled.div`
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 63px 40px;
+    padding: 86px 40px;
 `;
 
 const LeftContent = styled.div`

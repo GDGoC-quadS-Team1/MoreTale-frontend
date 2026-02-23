@@ -1,3 +1,4 @@
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import Header from "../../components/Header";
@@ -9,13 +10,78 @@ import ArrowLeftIcon from "../../assets/images/tale/arrow-left.svg";
 import ArrowRightIcon from "../../assets/images/tale/arrow-right.svg";
 import SpeakerIcon from "../../assets/images/tale/speaker.svg";
 import BookmarkIcon from "../../assets/images/tale/bookmark.svg";
-import Image1 from "../../assets/mid-demo/page_01.png";
+// mid-demo source
+import Image01 from "../../assets/mid-demo/illustrations/page_01.png";
+import Image02 from "../../assets/mid-demo/illustrations/page_02.png";
+import audio01Primary from "../../assets/mid-demo/audio/01_korean/page_01_primary.wav";
+import audio02Primary from "../../assets/mid-demo/audio/01_korean/page_02_primary.wav";
+import audio01Secondary from "../../assets/mid-demo/audio/02_japanese/page_01_secondary.wav";
+import audio02Secondary from "../../assets/mid-demo/audio/02_japanese/page_02_secondary.wav";
+
+const SLIDES = [
+    {
+        image: Image01,
+        text_primary: "깊은 밤, 언제나 빛나던 달이 오늘은 보이지 않았어요. 하늘은 온통 깜깜했죠. 모두가 고개를 갸웃거렸답니다.",
+        text_secondary: "深い夜、いつも輝いていた月が、今日は見えませんでした。空は真っ暗でした。みんなが首をかしげました。",
+        audio_primary: audio01Primary,
+        audio_secondary: audio01Secondary,
+    },
+    {
+        image: Image02,
+        text_primary: "저 멀리 달나라에 사는 달토끼 달리도 깜짝 놀랐어요. 밤마다 떡을 찧어야 하는데, 달빛이 없으니 아무것도 보이지 않았거든요.",
+        text_secondary: "遠い月の国に住む月うさぎのダリもびっくりしました。毎晩お餅をつかなければならないのに、月の光がないと何も見えなかったからです。",
+        audio_primary: audio02Primary,
+        audio_secondary: audio02Secondary,
+    },
+];
 
 const ReadPage = () => {
     const navigate = useNavigate();
+    
+    const [currentSlide, setCurrentSlide] = useState(0);
+    const audioPrimaryRef = useRef<HTMLAudioElement | null>(null);
+    const audioSecondaryRef = useRef<HTMLAudioElement | null>(null);
+
+    const slide = SLIDES[currentSlide];
+    const isFirstSlide = currentSlide === 0;
+    const isLastSlide = currentSlide === SLIDES.length - 1;
+
+    const handleLeftClick = () => {
+        if (isLastSlide) {
+            navigate("/tale/finish");
+        } else if (isFirstSlide) {
+            navigate(-1);
+        } else {
+            setCurrentSlide((prev) => prev - 1);
+        }
+    };
+
+    const handleRightClick = () => {
+        if (isLastSlide) {
+            navigate("/tale/finish");
+        } else {
+            setCurrentSlide((prev) => prev + 1);
+        }
+    };
+
+    const playPrimary = () => {
+        if (audioPrimaryRef.current) {
+            audioPrimaryRef.current.currentTime = 0;
+            audioPrimaryRef.current.play();
+        }
+    };
+
+    const playSecondary = () => {
+        if (audioSecondaryRef.current) {
+            audioSecondaryRef.current.currentTime = 0;
+            audioSecondaryRef.current.play();
+        }
+    };
 
     return (
         <Wrapper>
+            <audio ref={audioPrimaryRef} src={slide.audio_primary} preload="metadata" />
+            <audio ref={audioSecondaryRef} src={slide.audio_secondary} preload="metadata" />
             <Header />
             <Container>
                 {/* 표지 및 제목 */}
@@ -28,36 +94,36 @@ const ReadPage = () => {
                 {/* 내용 */}
                 <BookContainer>
                     <Bookmark src={BookmarkIcon} alt="" />
-                    <NavButton $position="left" type="button" aria-label="">
+                    <NavButton $position="left" type="button" aria-label="" onClick={handleLeftClick}>
                         <Image height={26} src={ArrowLeftIcon} alt="" />
                     </NavButton>
-                    <NavButton $position="right" type="button" aria-label="">
-                        <Image height={26} src={ArrowRightIcon} alt="" onClick={() => navigate("/tale/finish")}/>
+                    <NavButton $position="right" type="button" aria-label="" onClick={handleRightClick}>
+                        <Image height={26} src={ArrowRightIcon} alt="" />
                     </NavButton>
 
                     {/* 일러스트 */}
                     <LeftSection>
-                        <PageImage src={Image1} alt="동화 일러스트" />
+                        <PageImage src={slide.image} alt="" />
                     </LeftSection>
 
                     {/* 텍스트 */}
                     <RightSection>
                         {/* 언어 1 */}
                         <TextContainer>
-                            <Flag src={Korea} alt="한국어" />
+                            <Flag src={Korea} alt="" />
                             <Lang>
-                                <LangText>한국어 텍스트</LangText>
-                                <SpeakerButton type="button" aria-label="">
+                                <LangText>{slide.text_primary}</LangText>
+                                <SpeakerButton type="button" aria-label="" onClick={playPrimary}>
                                     <Image height={36} src={SpeakerIcon} alt="" />
                                 </SpeakerButton>
                             </Lang>
                         </TextContainer>
                         {/* 언어 2 */}
                         <TextContainer>
-                            <Flag src={Japan} alt="일본어" />
+                            <Flag src={Japan} alt="" />
                             <Lang>
-                                <LangText>일본어 텍스트</LangText>
-                                <SpeakerButton type="button" aria-label="">
+                                <LangText>{slide.text_secondary}</LangText>
+                                <SpeakerButton type="button" aria-label="" onClick={playSecondary}>
                                     <Image height={36} src={SpeakerIcon} alt="" />
                                 </SpeakerButton>
                             </Lang>
@@ -149,14 +215,14 @@ const BookContainer = styled.div`
 const LeftSection = styled.div`
     flex: 1;
     display: flex;
-    align-items: center;
-    justify-content: center;
+    align-items: flex-start;
+    justify-content: flex-start;
 `;
 
 const RightSection = styled.div`
     flex: 1.01;
     background: #FFFFFF;
-    padding: 60px 80px 200px 50px;
+    padding: 20px 80px 20px 50px;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -194,9 +260,9 @@ const NavButton = styled.button<{ $position: "left" | "right" }>`
 
 const PageImage = styled.img`
     width: 100%;
-    max-width: 680px;
+    max-width: 580px;
     height: 100%;
-    max-height: 680px;
+    max-height: 580px;
     object-fit: contain;
 `;
 
