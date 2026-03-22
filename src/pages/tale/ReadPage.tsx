@@ -18,6 +18,34 @@ import audio02Primary from "../../assets/mid-demo/audio/01_korean/page_02_primar
 import audio01Secondary from "../../assets/mid-demo/audio/02_japanese/page_01_secondary.wav";
 import audio02Secondary from "../../assets/mid-demo/audio/02_japanese/page_02_secondary.wav";
 
+type LanguageCode = "ko" | "ja";
+
+type WordMeta = {
+    mapped: string;
+    definition: string;
+    ttsLang: string;
+};
+
+const WORD_MAP: Record<string, WordMeta> = {
+    "깊은": { mapped: "深い", definition: "매우 깊이가 있거나 짙은 상태를 의미해요.", ttsLang: "ko-KR" },
+    "밤": { mapped: "夜", definition: "해가 진 뒤부터 해가 뜨기 전까지의 시간이에요.", ttsLang: "ko-KR" },
+    "달": { mapped: "月", definition: "지구 주위를 도는 위성이며 밤하늘에 보이는 천체예요.", ttsLang: "ko-KR" },
+    "달토끼": { mapped: "月うさぎ", definition: "달에서 산다고 전해지는 토끼를 뜻해요.", ttsLang: "ko-KR" },
+    "月": { mapped: "달", definition: "밤하늘의 달을 의미하는 일본어 단어예요.", ttsLang: "ja-JP" },
+    "夜": { mapped: "밤", definition: "일본어로 밤을 뜻해요.", ttsLang: "ja-JP" },
+    "月うさぎ": { mapped: "달토끼", definition: "일본 설화에서 달에 사는 토끼를 뜻해요.", ttsLang: "ja-JP" },
+};
+
+const TOKEN_SPLIT_REGEX = /(\s+|[.,!?;:()"'\[\]{}…。，、！？])/;
+
+const tokenizeText = (text: string) => text.split(TOKEN_SPLIT_REGEX).filter(token => token.length > 0);
+
+const normalizeToken = (token: string) => token.trim().replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "");
+
+const isWordToken = (token: string) => normalizeToken(token).length > 0;
+
+const getDefaultTtsLang = (lang: LanguageCode) => (lang === "ko" ? "ko-KR" : "ja-JP");
+
 const SLIDES = [
     {
         image: Image01,
@@ -43,6 +71,9 @@ const ReadPage = () => {
     const [currentSlide, setCurrentSlide] = useState(initialSlide);
     const audioPrimaryRef = useRef<HTMLAudioElement | null>(null);
     const audioSecondaryRef = useRef<HTMLAudioElement | null>(null);
+    const hoverCloseTimerRef = useRef<number | null>(null);
+    const [activeWordKey, setActiveWordKey] = useState<string | null>(null);
+    const [bookmarkedWords, setBookmarkedWords] = useState<Record<string, boolean>>({});
 
     const slide = SLIDES[currentSlide];
     const isFirstSlide = currentSlide === 0;
@@ -73,6 +104,95 @@ const ReadPage = () => {
             audioSecondaryRef.current.currentTime = 0;
             audioSecondaryRef.current.play();
         }
+    };
+
+    const speakWord = (word: string, lang: LanguageCode, ttsLang?: string) => {
+        if (typeof window === "undefined" || !window.speechSynthesis) return;
+        const utterance = new SpeechSynthesisUtterance(word);
+        utterance.lang = ttsLang || getDefaultTtsLang(lang);
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(utterance);
+    };
+
+    const toggleBookmark = (wordKey: string) => {
+        setBookmarkedWords((prev) => ({ ...prev, [wordKey]: !prev[wordKey] }));
+    };
+
+    const clearHoverCloseTimer = () => {
+        if (hoverCloseTimerRef.current !== null) {
+            window.clearTimeout(hoverCloseTimerRef.current);
+            hoverCloseTimerRef.current = null;
+        }
+    };
+
+    const openWordPopover = (wordKey: string) => {
+        clearHoverCloseTimer();
+        setActiveWordKey(wordKey);
+    };
+
+    const scheduleCloseWordPopover = (wordKey: string) => {
+        clearHoverCloseTimer();
+        hoverCloseTimerRef.current = window.setTimeout(() => {
+            setActiveWordKey((prev) => (prev === wordKey ? null : prev));
+            hoverCloseTimerRef.current = null;
+        }, 140);
+    };
+
+    const renderInteractiveText = (text: string, lang: LanguageCode) => {
+        const tokens = tokenizeText(text);
+
+        return (
+            <LangText>
+                {tokens.map((token, index) => {
+                    if (!isWordToken(token)) {
+                        return <span key={`${token}-${index}`}>{token}</span>;
+                    }
+
+                    const normalized = normalizeToken(token);
+                    const wordMeta = WORD_MAP[normalized];
+                    const wordKey = `${lang}:${normalized}`;
+                    const isBookmarked = Boolean(bookmarkedWords[wordKey]);
+                    const isActive = activeWordKey === wordKey;
+
+                    return (
+                        <WordWrapper
+                            key={`${wordKey}-${index}`}
+                            onMouseEnter={() => openWordPopover(wordKey)}
+                            onMouseLeave={() => scheduleCloseWordPopover(wordKey)}
+                        >
+                            <WordHighlight>{token}</WordHighlight>
+                            {isActive && (
+                                <WordPopover
+                                    onMouseEnter={clearHoverCloseTimer}
+                                    onMouseLeave={() => scheduleCloseWordPopover(wordKey)}
+                                >
+                                    <PopoverWord>{normalized}</PopoverWord>
+                                    <PopoverMeta>매핑: {wordMeta?.mapped || "준비 중"}</PopoverMeta>
+                                    <PopoverDefinition>{wordMeta?.definition || "정의 데이터가 아직 없어요."}</PopoverDefinition>
+                                    <PopoverActions>
+                                        <PopoverIconButton
+                                            type="button"
+                                            onClick={() => speakWord(normalized, lang, wordMeta?.ttsLang)}
+                                            aria-label="단어 음성 재생"
+                                        >
+                                            <Image height={18} src={SpeakerIcon} alt="" />
+                                        </PopoverIconButton>
+                                        <PopoverBookmarkButton
+                                            type="button"
+                                            $active={isBookmarked}
+                                            onClick={() => toggleBookmark(wordKey)}
+                                            aria-label="단어 북마크"
+                                        >
+                                            북마크 {isBookmarked ? "해제" : "저장"}
+                                        </PopoverBookmarkButton>
+                                    </PopoverActions>
+                                </WordPopover>
+                            )}
+                        </WordWrapper>
+                    );
+                })}
+            </LangText>
+        );
     };
 
     return (
@@ -109,7 +229,7 @@ const ReadPage = () => {
                         <TextContainer>
                             <Flag src={Korea} alt="" />
                             <Lang>
-                                <LangText>{slide.text_primary}</LangText>
+                                {renderInteractiveText(slide.text_primary, "ko")}
                                 <SpeakerButton type="button" aria-label="" onClick={playPrimary}>
                                     <Image height={36} src={SpeakerIcon} alt="" />
                                 </SpeakerButton>
@@ -119,7 +239,7 @@ const ReadPage = () => {
                         <TextContainer>
                             <Flag src={Japan} alt="" />
                             <Lang>
-                                <LangText>{slide.text_secondary}</LangText>
+                                {renderInteractiveText(slide.text_secondary, "ja")}
                                 <SpeakerButton type="button" aria-label="" onClick={playSecondary}>
                                     <Image height={36} src={SpeakerIcon} alt="" />
                                 </SpeakerButton>
@@ -293,6 +413,87 @@ const LangText = styled.div`
     font-style: normal;
     font-weight: 500;
     line-height: 45px;
+    word-break: keep-all;
+`;
+
+const WordWrapper = styled.span`
+    position: relative;
+    display: inline-block;
+`;
+
+const WordHighlight = styled.span`
+    transition: background-color 0.15s ease-in-out;
+    border-radius: 6px;
+    padding: 0 2px;
+    cursor: pointer;
+
+    &:hover {
+        background: #FFF2A6;
+    }
+`;
+
+const WordPopover = styled.div`
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    min-width: 260px;
+    max-width: 320px;
+    background: #FFFFFF;
+    border: 1px solid #DFDFDF;
+    border-radius: 12px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.16);
+    padding: 12px;
+    z-index: 120;
+`;
+
+const PopoverWord = styled.div`
+    font-size: 18px;
+    font-weight: 800;
+    line-height: 24px;
+    margin-bottom: 4px;
+`;
+
+const PopoverMeta = styled.div`
+    font-size: 14px;
+    color: #555555;
+    margin-bottom: 4px;
+`;
+
+const PopoverDefinition = styled.div`
+    font-size: 14px;
+    line-height: 20px;
+    color: #1F1F1F;
+`;
+
+const PopoverActions = styled.div`
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+`;
+
+const PopoverIconButton = styled.button`
+    width: 34px;
+    height: 34px;
+    border: none;
+    border-radius: 50%;
+    background: #F3F3F3;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+`;
+
+const PopoverBookmarkButton = styled.button<{ $active: boolean }>`
+    border: none;
+    border-radius: 8px;
+    background: ${props => (props.$active ? "#FFDE21" : "#EFEFEF")};
+    color: #1F1F1F;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 8px 10px;
+    cursor: pointer;
 `;
 
 const SpeakerButton = styled.button`

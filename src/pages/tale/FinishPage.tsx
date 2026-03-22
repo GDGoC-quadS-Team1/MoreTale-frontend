@@ -55,7 +55,7 @@ const FinishPage = () => {
                                 borderRadius={5}
                                 onClick={() => navigate("/tale/read")}
                             >
-                                다시 읽으러가기
+                                다시 읽기
                             </YellowButton>
                             <YellowButton
                                 type="button"
@@ -84,7 +84,7 @@ const FinishPage = () => {
                                 backgroundColor="#515050"
                                 color="#FFDE21"
                             >
-                                서재 바로가기
+                                도서관 바로가기
                             </YellowButton>
                         </ButtonGroup>
                         <Image 
