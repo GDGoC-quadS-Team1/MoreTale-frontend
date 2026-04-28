@@ -15,7 +15,7 @@ const FinishPage = () => {
 
     return (
         <Wrapper>
-            <Header />
+            <Header activeMenu="tale" />
             <Container>
                 {/* 표지 및 제목 */}
                 <InfoContainer>

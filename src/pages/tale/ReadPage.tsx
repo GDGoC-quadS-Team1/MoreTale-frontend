@@ -79,7 +79,7 @@ const ReadPage = () => {
         <Wrapper>
             <audio ref={audioPrimaryRef} src={slide.audio_primary} preload="metadata" />
             <audio ref={audioSecondaryRef} src={slide.audio_secondary} preload="metadata" />
-            <Header />
+            <Header activeMenu="tale" />
             <Container>
                 {/* 표지 및 제목 */}
                 <InfoContainer>

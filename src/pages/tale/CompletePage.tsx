@@ -11,7 +11,7 @@ const CompletePage = () => {
 
     return (
         <Wrapper>
-            <Header />
+            <Header activeMenu="tale" />
             <Container>
                 <Title>이야기가 다 만들어졌어요!</Title>
                 <RowContainer>
