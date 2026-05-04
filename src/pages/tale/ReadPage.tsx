@@ -2,7 +2,6 @@ import { useState, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import Header from "../../components/Header";
-import Book from "../../assets/images/tale/book.png";
 import PencilIcon from "../../assets/images/tale/pencil.svg";
 import Korea from "../../assets/images/tale/flag/korea.png";
 import Japan from "../../assets/images/tale/flag/japan.png";
@@ -10,6 +9,8 @@ import ArrowLeftIcon from "../../assets/images/tale/arrow-left.svg";
 import ArrowRightIcon from "../../assets/images/tale/arrow-right.svg";
 import SpeakerIcon from "../../assets/images/tale/speaker.svg";
 import BookmarkIcon from "../../assets/images/tale/bookmark.svg";
+import LibraryIcon from "../../assets/images/icon/library.svg";
+import SettingIcon from "../../assets/images/icon/setting.svg";
 // mid-demo source
 import Image01 from "../../assets/mid-demo/illustrations/page_01.png";
 import Image02 from "../../assets/mid-demo/illustrations/page_02.png";
@@ -81,11 +82,17 @@ const ReadPage = () => {
             <audio ref={audioSecondaryRef} src={slide.audio_secondary} preload="metadata" />
             <Header activeMenu="tale" />
             <Container>
-                {/* 표지 및 제목 */}
+                {/* 제목 및 아이콘 */}
                 <InfoContainer>
-                    <Image height={120} src={Book} alt="" />
-                    <Title>달토끼와 츠키 토끼의 빛나는 선물</Title>
-                    <Icon src={PencilIcon} alt="" />
+                    <LeftContainer>
+                        <Title>달토끼와 츠키 토끼의 빛나는 선물</Title>
+                        <Icon src={PencilIcon} alt="" />
+                    </LeftContainer>
+                    <RightContainer>
+                        <PageIndicator>{currentSlide + 1} / {SLIDES.length} 쪽</PageIndicator>
+                        <IconButton type="button"><Icon src={LibraryIcon} alt="" /></IconButton>
+                        <IconButton type="button"><Icon src={SettingIcon} alt="" /></IconButton>
+                    </RightContainer>
                 </InfoContainer>
 
                 {/* 내용 */}
@@ -161,6 +168,19 @@ const Container = styled.div`
     overflow: auto;
 `;
 
+const LeftContainer = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 20px;
+`;
+
+const RightContainer = styled.div`
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+`;
+
 const Title = styled.div`
     color: #1F1F1F;
     text-align: center;
@@ -169,6 +189,26 @@ const Title = styled.div`
     font-weight: 800;
     line-height: 45px;
     cursor: default;
+`;
+
+const PageIndicator = styled.div`
+    border-radius: 5px;
+    border: 1px solid #424242;
+    padding: 6px 12px;
+    font-size: 16px;
+    font-style: normal;
+    font-weight: 600;
+    color: #424242;
+    background: #FFFFFF;
+    margin-right: 4px;
+`;
+
+const IconButton = styled.button`
+    border: none;
+    background: none;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
 `;
 
 const Image = styled.img`
@@ -182,29 +222,25 @@ const Icon = styled.img`
 
 const InfoContainer = styled.div`
     width: 100%;
-    max-width: 1400px;
     flex: 1;
     display: flex;
     flex-direction: row;
     align-items: center;
     justify-content: flex-start;
     align-self: flex-start;
-    gap: 20px;
     z-index: 1;
-    padding-left: 20px;
 `;
 
 const BookContainer = styled.div`
     width: 100%;
-    max-width: 1400px;
     position: relative;
     background: #FFFFFF;
+    border-radius: 20px;
     flex: 1;
     display: flex;
     flex-direction: row;
     align-items: center;
     justify-content: flex-start;
-    margin-top: -28px;
     overflow: visible;
     box-shadow: 0 4px 4px rgba(0, 0, 0, 0.25);
 `;
@@ -214,11 +250,11 @@ const LeftSection = styled.div`
     display: flex;
     align-items: flex-start;
     justify-content: flex-start;
+    padding: 24px 0 24px 30px;
 `;
 
 const RightSection = styled.div`
     flex: 1.01;
-    background: #FFFFFF;
     padding: 20px 80px 20px 50px;
     display: flex;
     flex-direction: column;
@@ -245,7 +281,7 @@ const NavButton = styled.button<{ $position: "left" | "right" }>`
     height: 56px;
     border-radius: 50%;
     background: #FFFFFF;
-    border: 0.3px solid #000000;
+    border: 0.3px solid #808080;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -265,6 +301,8 @@ const PageImage = styled.img`
     height: 100%;
     max-height: 580px;
     object-fit: contain;
+    border-radius: 16px;
+    box-shadow: 0 4px 4px 0 rgba(0, 0, 0, 0.25);
 `;
 
 const TextContainer = styled.div`
@@ -288,6 +326,7 @@ const Lang = styled.div`
 `;
 
 const LangText = styled.div`
+    font-family: "Ownglyph corncorn";
     color: #1F1F1F;
     font-size: 30px;
     font-style: normal;
