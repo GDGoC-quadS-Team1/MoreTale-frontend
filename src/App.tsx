@@ -42,7 +42,7 @@ function App() {
         <Route path="/lib" element={<LibraryPage />} />
 
         {/* VOCA */}
-        <Route path="/lib/voca" element={<VocabularyPage />} />
+        <Route path="/voca" element={<VocabularyPage />} />
 
         {/* QUIZ */}
         <Route path="/quiz" element={<QuizListPage />} />

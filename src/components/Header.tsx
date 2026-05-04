@@ -21,7 +21,7 @@ const Header = ({ activeMenu }: HeaderProps) => {
                 <MenuContainer>
                     <Menu type="button" $active={activeMenu === 'tale'} onClick={() => navigate("/tale/intro")}>TALE</Menu>
                     <Menu type="button" $active={activeMenu === 'library'} onClick={() => navigate("/lib")}>LIBRARY</Menu>
-                    <Menu type="button" $active={activeMenu === 'voca'} onClick={() => navigate("/lib/voca")}>VOCA</Menu>
+                    <Menu type="button" $active={activeMenu === 'voca'} onClick={() => navigate("/voca")}>VOCA</Menu>
                     <Menu type="button" $active={activeMenu === 'quiz'} onClick={() => navigate("/quiz")}>QUIZ</Menu>
                     <Menu type="button" $active={activeMenu === 'my'} onClick={() => navigate("/mypage")}>MY</Menu>
                 </MenuContainer>
@@ -70,7 +70,7 @@ const MenuContainer = styled.div`
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    gap: 54px;
+    gap: 40px;
 `;
 
 const Menu = styled.button<{ $active?: boolean }>`

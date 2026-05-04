@@ -119,7 +119,7 @@ const Wrapper = styled.div`
 `;
 
 const Container = styled.div`
-    background: #DEDEDE;
+    background: #F2F2F2;
     width: 100%;
     flex: 1;
     display: flex;
