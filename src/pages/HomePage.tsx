@@ -20,16 +20,17 @@ const SLIDE_STEPS = [
         title: <>우리 아이의 <br/>세계를 기록하는 <br/>이야기 책장</>,
         subtitle: <>언어를 넘나드는<br/> 이야기들이 머무는 아이만의 도서관</>,
         image: Image2,
-        imageHeight: 380,
+        imageHeight: 700,
+        imageBottomOffset: -300,
         buttonText: <>도서관<br/>바로가기</>,
-        wrapperBackground: "#ECE6DE",
-        buttonBackground: "#FFDE21",
+        wrapperBackground: "F2F2F2",
+        buttonBackground: "#FFFFFF",
     },
     {
         title: <>동화 속 이야기를<br/> 기억해볼까요? <br/>동화 퀴즈 한 판!</>,
         subtitle: <>짧은 퀴즈로 동화를 재미있게 복습해요.<br/>퀴즈를 풀고 꿀스티커를 받아보아요!</>,
         image: Image3,
-        imageHeight: 368,
+        imageHeight: 400,
         buttonText: <>퀴즈<br/>바로가기</>,
         wrapperBackground: "#FFFFFF",
         buttonBackground: "#FFDE21",
@@ -49,12 +50,16 @@ const HomePage = () => {
         <Wrapper $bg={step.wrapperBackground}>
             <Container>
                 <Header />
-                <Content>
+                <Content $flushRight={currentStep === 1}>
                     <TextContainer>
                         <Title>{step.title}</Title>
                         <Subtitle>{step.subtitle}</Subtitle>
                     </TextContainer>
-                    <ImageContainer>
+                    <ImageContainer
+                        $isBottomAligned={currentStep === 1}
+                        $bottomOffset={step.imageBottomOffset ?? 0}
+                        $flushRight={currentStep === 1}
+                    >
                         <Image src={step.image} height={step.imageHeight} alt="" />
                     </ImageContainer>
                 </Content>
@@ -112,14 +117,14 @@ const Container = styled.div`
     overflow: visible;
 `;
 
-const Content = styled.div`
+const Content = styled.div<{ $flushRight?: boolean }>`
     width: 100%;
     box-sizing: border-box;
     display: flex;
     flex-direction: row;
     align-items: flex-end;
     justify-content: space-between;
-    padding: 60px 72px;
+    padding: ${({ $flushRight }) => ($flushRight ? "60px 0 60px 72px" : "60px 40px 60px 72px")};
 `;
 
 const TextContainer = styled.div`
@@ -151,10 +156,13 @@ const Subtitle = styled.div`
     margin-bottom: 8px;
 `;
 
-const ImageContainer = styled.div`
+const ImageContainer = styled.div<{ $isBottomAligned?: boolean; $bottomOffset?: number; $flushRight?: boolean }>`
     display: flex;
     flex-shrink: 0;
-    padding-right: 24px;
+    padding-top: 20px;
+    padding-right: ${({ $flushRight }) => ($flushRight ? "0" : "24px")};
+    align-self: ${({ $isBottomAligned }) => ($isBottomAligned ? "flex-end" : "flex-start")};
+    margin-bottom: ${({ $bottomOffset = 0 }) => `${$bottomOffset}px`};
 `;
 
 const Image = styled.img`

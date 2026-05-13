@@ -9,7 +9,7 @@ const IntroPage = () => {
 
     return (
         <Wrapper>
-            <Header />
+            <Header activeMenu="tale" />
             <Container>
                 <Title>어떤 이야기를 만들어볼까요?</Title>
                 <Image src={IntroImage} height={282} alt="" />
