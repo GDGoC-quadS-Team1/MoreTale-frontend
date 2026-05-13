@@ -8,7 +8,7 @@ const PromptPage = () => {
 
     return (
         <Wrapper>
-            <Header />
+            <Header activeMenu="tale" />
             <Container>
                 <Title>만들고 싶은 이야기에 대해 알려주세요!</Title>
                 <TextInput placeholder="이곳을 클릭해 입력해주세요." />

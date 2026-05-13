@@ -16,7 +16,7 @@ const LoadingPage = () => {
 
     return (
         <Wrapper>
-            <Header />
+            <Header activeMenu="tale" />
             <Container>
                 <DotContainer>
                     <Dot color="#FEEE95" $delay={0} />

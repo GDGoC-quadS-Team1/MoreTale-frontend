@@ -2,30 +2,34 @@ import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import Header from "../../components/Header";
 import YellowButton from "../../components/YellowButton";
-import CompleteImage from "../../assets/images/tale/complete.png";
 import Korea from "../../assets/images/tale/flag/korea.png";
 import Japan from "../../assets/images/tale/flag/japan.png";
+import BookCover from "../../assets/images/tale/book-cover-ex.png";
+import Flower from "../../assets/images/tale/flower.png";
 
 const CompletePage = () => {
     const navigate = useNavigate();
 
     return (
         <Wrapper>
-            <Header />
+            <Header activeMenu="tale" />
             <Container>
                 <Title>이야기가 다 만들어졌어요!</Title>
                 <RowContainer>
-                    <Image height={404} src={CompleteImage} alt="" />
+                    <BookImageContainer>
+                        <FlowerImage height={380} src={Flower} alt="" />
+                        <BookImage height={260} src={BookCover} alt="" />
+                    </BookImageContainer>
                     <ColumnContainer>
                         <FlagContainer>
                             <Image height={96} src={Korea} alt="한국어" />
                             <Image height={96} src={Japan} alt="일본어" />
                         </FlagContainer>
                         <YellowButton type="button" width={320} height={68} fontSize={28} borderRadius={5} onClick={() => navigate("/tale/read")}>
-                            이야기 보러가기
+                            이야기 보러 가기
                         </YellowButton>
                         <YellowButton type="button" width={320} height={68} fontSize={28} borderRadius={5} backgroundColor={'#515050'} color={'#FFDE21'}>
-                            서재에 넣기
+                            도서관에 넣기
                         </YellowButton>
                     </ColumnContainer>
                 </RowContainer>
@@ -74,6 +78,25 @@ const Title = styled.div`
 
 const Image = styled.img`
     height: ${props => props.height}px;
+`;
+
+const BookImageContainer = styled.div`
+    position: relative;
+    width: 540px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+`;
+
+const FlowerImage = styled.img`
+    height: ${props => props.height}px;
+`;
+
+const BookImage = styled(Image)`
+    position: absolute;
+    z-index: 1;
+    margin-top: -140px;
+    box-shadow: 0 4px 4px 0 rgba(0, 0, 0, 0.25);
 `;
 
 const RowContainer = styled.div`

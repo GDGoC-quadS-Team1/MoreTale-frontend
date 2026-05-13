@@ -10,7 +10,7 @@ const LanguagePage = () => {
 
     return (
         <Wrapper>
-            <Header />
+            <Header activeMenu="tale" />
             <Container>
                 <Title>두 가지 언어로<br/>이야기를 만들어볼게요!</Title>
                 <LanguageContainer>

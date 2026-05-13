@@ -1,27 +1,33 @@
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import Header from "../../components/Header";
-import YellowButton from "../../components/YellowButton";
-import Book from "../../assets/images/tale/book.png";
 import PencilIcon from "../../assets/images/tale/pencil.svg";
 import Finish from "../../assets/images/tale/finish.png";
-import Bee from "../../assets/images/tale/bee.png";
 import ArrowLeftIcon from "../../assets/images/tale/arrow-left.svg";
+import LibraryIcon from "../../assets/images/icon/library.svg";
+import SettingIcon from "../../assets/images/icon/setting.svg";
 
 const BOOK_TITLE = "달토끼와 츠키 토끼의 빛나는 선물";
+const TOTAL_PAGES = 2;
 
 const FinishPage = () => {
     const navigate = useNavigate();
 
     return (
         <Wrapper>
-            <Header />
+            <Header activeMenu="tale" />
             <Container>
-                {/* 표지 및 제목 */}
+                {/* 제목 및 아이콘 */}
                 <InfoContainer>
-                    <Image height={120} src={Book} alt="" />
-                    <Title>{BOOK_TITLE}</Title>
-                    <Icon src={PencilIcon} alt="" />
+                    <LeftContainer>
+                        <Title>{BOOK_TITLE}</Title>
+                        <Icon src={PencilIcon} alt="" />
+                    </LeftContainer>
+                    <RightContainer>
+                        <PageIndicator>{TOTAL_PAGES} / {TOTAL_PAGES} 쪽</PageIndicator>
+                        <IconButton type="button"><Icon src={LibraryIcon} alt="" /></IconButton>
+                        <IconButton type="button"><Icon src={SettingIcon} alt="" /></IconButton>
+                    </RightContainer>
                 </InfoContainer>
 
                 <BookContainer>
@@ -33,69 +39,21 @@ const FinishPage = () => {
                     >
                         <Image height={26} src={ArrowLeftIcon} alt="" />
                     </NavButton>
+                    <Content>
+                        <Text>
+                            &lt;{BOOK_TITLE}&gt;을 다 읽었어요!<br />
+                            오늘의 꿀스티커를 받아요!
+                        </Text>
 
-                    <LeftSection>
-                        <LeftContent>
-                            <Text>
-                                '{BOOK_TITLE}'을<br />
-                                다 읽었어요!<br />
-                                오늘의 꿀스티커를 받아요!
-                            </Text>
-                            <Image height={238} src={Finish} alt="꿀스티커" />
-                        </LeftContent>
-                    </LeftSection>
+                        <ImageContainer>
+                            <HoneyImg src={Finish} alt="" />
+                        </ImageContainer>
 
-                    <RightSection>
                         <ButtonGroup>
-                            <YellowButton
-                                type="button"
-                                width={320}
-                                height={68}
-                                fontSize={28}
-                                borderRadius={5}
-                                onClick={() => navigate("/tale/read")}
-                            >
-                                다시 읽으러가기
-                            </YellowButton>
-                            <YellowButton
-                                type="button"
-                                width={320}
-                                height={68}
-                                fontSize={28}
-                                borderRadius={5}
-                            >
-                                퀴즈 풀러가기
-                            </YellowButton>
-                            <YellowButton
-                                type="button"
-                                width={320}
-                                height={68}
-                                fontSize={28}
-                                borderRadius={5}
-                            >
-                                꿀창고 바로가기
-                            </YellowButton>
-                            <YellowButton
-                                type="button"
-                                width={320}
-                                height={68}
-                                fontSize={30}
-                                borderRadius={5}
-                                backgroundColor="#515050"
-                                color="#FFDE21"
-                            >
-                                서재 바로가기
-                            </YellowButton>
+                            <YellowButton onClick={() => navigate("/voca")}>단어장</YellowButton>
+                            <YellowButton onClick={() => navigate("/quiz")}>퀴즈 풀기</YellowButton>
                         </ButtonGroup>
-                        <Image 
-                            height={140} 
-                            src={Bee} 
-                            alt="" 
-                            style={{ 
-                                marginTop: '110px',
-                            }}
-                        />
-                    </RightSection>
+                    </Content>
                 </BookContainer>
             </Container>
         </Wrapper>
@@ -119,7 +77,7 @@ const Wrapper = styled.div`
 `;
 
 const Container = styled.div`
-    background: #DEDEDE;
+    background: #F2F2F2;
     width: 100%;
     flex: 1;
     display: flex;
@@ -133,7 +91,6 @@ const Container = styled.div`
 
 const InfoContainer = styled.div`
     width: 100%;
-    max-width: 1400px;
     flex: 1;
     display: flex;
     flex-direction: row;
@@ -142,20 +99,49 @@ const InfoContainer = styled.div`
     align-self: flex-start;
     gap: 20px;
     z-index: 1;
-    padding-left: 20px;
+`;
+
+const LeftContainer = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 20px;
+`;
+
+const RightContainer = styled.div`
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+`;
+
+const PageIndicator = styled.div`
+    border-radius: 5px;
+    border: 1px solid #424242;
+    padding: 6px 12px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #424242;
+    background: #FFFFFF;
+    margin-right: 4px;
+`;
+
+const IconButton = styled.button`
+    border: none;
+    background: none;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
 `;
 
 const BookContainer = styled.div`
     width: 100%;
-    max-width: 1400px;
     position: relative;
     background: #FFFFFF;
+    border-radius: 20px;
     flex: 1;
     display: flex;
-    flex-direction: row;
     align-items: center;
-    justify-content: flex-start;
-    margin-top: -28px;
+    justify-content: center;
     overflow: visible;
     box-shadow: 0 4px 4px rgba(0, 0, 0, 0.25);
 `;
@@ -169,7 +155,7 @@ const NavButton = styled.button<{ $position: "left" | "right" }>`
     height: 56px;
     border-radius: 50%;
     background: #FFFFFF;
-    border: 0.3px solid #000000;
+    border: 0.3px solid #808080;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -198,45 +184,57 @@ const Icon = styled.img`
     height: 29px;
 `;
 
-const LeftSection = styled.div`
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 86px 40px;
-`;
-
-const LeftContent = styled.div`
+const Content = styled.div`
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 34px;
+    justify-content: center;
+    gap: 40px;
+    padding: 80px 40px;
 `;
 
 const Text = styled.div`
     color: #1F1F1F;
     font-size: 30px;
-    font-style: normal;
     font-weight: 700;
+    font-style: normal;
     line-height: 45px;
     text-align: center;
     cursor: default;
+    color: #1F1F1F;
 `;
 
-const RightSection = styled.div`
-    flex: 1;
-    padding: 40px;
+const ImageContainer = styled.div`
+    position: relative;
     display: flex;
-    flex-direction: row;
     align-items: center;
     justify-content: center;
-    position: relative;
+    padding-right: 60px;
+`;
+
+const HoneyImg = styled.img`
+    height: 220px;
 `;
 
 const ButtonGroup = styled.div`
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
     justify-content: center;
-    gap: 24px;
+    gap: 40px;
+`;
+
+const YellowButton = styled.button`
+    width: 180px;
+    padding: 8px 0;
+    color: #424242;
+    text-align: center;
+    font-size: 30px;
+    font-style: normal;
+    font-weight: 800;
+    line-height: 50px;
+    border-radius: 20px;
+    background: #FFDE21;
+    box-shadow: 0 4px 4px 0 rgba(0, 0, 0, 0.25);
+    border: none;
 `;
