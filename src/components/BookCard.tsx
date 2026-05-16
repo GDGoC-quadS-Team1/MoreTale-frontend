@@ -7,16 +7,21 @@ import japanFlag from "../assets/images/tale/flag/japan.png";
 import wordIcon from "../assets/images/icon/word.svg";
 import moreIcon from "../assets/images/icon/more.svg";
 
+export type BookCardListVariant = "library" | "quiz";
+
 export interface BookCardProps {
     title?: string;
     date?: string;
     coverSrc?: string;
+    /* 카드 클릭 시 버튼 : library → [읽기 | 단어장], quiz → [퀴즈 풀기] */
+    listVariant?: BookCardListVariant;
 }
 
 const BookCard = ({
     title = "달을 따라 간 소년",
     date = "2026.03.29.",
     coverSrc = bookCoverEx,
+    listVariant = "library",
 }: BookCardProps) => {
     const navigate = useNavigate();
     const [cardPopover, setCardPopover] = useState(false);
@@ -74,12 +79,18 @@ const BookCard = ({
                 <Overlay onClick={(e) => e.stopPropagation()} />
             )}
 
-            {/* [팝오버] 읽기|단어장 */}
+            {/* [팝오버] library → [읽기 | 단어장], quiz → [퀴즈 풀기] */}
             {cardPopover && (
                 <CardPopover onClick={(e) => e.stopPropagation()}>
-                    <PopoverButton onClick={() => navigate("/tale/read")}>읽기</PopoverButton>
-                    <PopoverDivider />
-                    <PopoverButton onClick={() => navigate("/voca")}>단어장</PopoverButton>
+                    {listVariant === "quiz" ? (
+                        <PopoverButton onClick={() => navigate("/quiz/play")}>퀴즈 풀기</PopoverButton>
+                    ) : (
+                        <>
+                            <PopoverButton onClick={() => navigate("/tale/read")}>읽기</PopoverButton>
+                            <PopoverDivider />
+                            <PopoverButton onClick={() => navigate("/voca")}>단어장</PopoverButton>
+                        </>
+                    )}
                 </CardPopover>
             )}
 

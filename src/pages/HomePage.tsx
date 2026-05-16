@@ -37,6 +37,8 @@ const SLIDE_STEPS = [
     },
 ];
 
+const STEP_ROUTES = ["/tale/intro", "/lib", "/quiz"] as const;
+
 const HomePage = () => {
     const navigate = useNavigate();
     
@@ -78,7 +80,7 @@ const HomePage = () => {
                         <Button
                             type="button"
                             $bg={step.buttonBackground}
-                            onClick={() => currentStep === 0 && navigate("/tale/intro")}
+                            onClick={() => navigate(STEP_ROUTES[currentStep])}
                         >
                             {step.buttonText}
                         </Button>
