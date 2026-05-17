@@ -15,7 +15,6 @@ import LibraryPage from './pages/library/LibraryPage';
 import VocabularyPage from './pages/library/VocabularyPage';
 import QuizListPage from './pages/quiz/QuizListPage';
 import QuizPlayPage from './pages/quiz/QuizPlayPage';
-import QuizResultPage from './pages/quiz/QuizResultPage';
 import MyPage from './pages/MyPage';
 
 function App() {
@@ -47,7 +46,6 @@ function App() {
         {/* QUIZ */}
         <Route path="/quiz" element={<QuizListPage />} />
         <Route path="/quiz/play" element={<QuizPlayPage />} />
-        <Route path="/quiz/result" element={<QuizResultPage />} />
 
         {/* MY */}
         <Route path="/mypage" element={<MyPage />} />
