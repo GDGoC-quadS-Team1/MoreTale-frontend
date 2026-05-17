@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import Header from "../components/Header";
+import YellowButton from "../components/YellowButton";
 import ProfileDefault from "../assets/images/mypage/profile-default.svg";
 import MaleIcon from "../assets/images/mypage/male.svg";
 import FemaleIcon from "../assets/images/mypage/female.svg";
@@ -10,6 +12,7 @@ import HoneyBee3 from "../assets/images/mypage/honey-bee-3.png";
 import HoneyJarFilled from "../assets/images/mypage/honey-jar-filled.png";
 import HoneyJarEmpty from "../assets/images/mypage/honey-jar-empty.png";
 import HoneyJarStand from "../assets/images/mypage/honey-jar-stand.png";
+import UsageBee from "../assets/images/mypage/bee.png";
 
 type SidebarKey = "member" | "honey" | "usage";
 
@@ -32,6 +35,11 @@ const HONEY_WAREHOUSE_DUMMY = {
     jarsPerRow: 5,
 };
 
+const USAGE_STATUS_DUMMY = {
+    currentCount: 3,
+    totalCount: 5,
+};
+
 const INFO_ROWS = [
     {
         label: "사용 언어",
@@ -51,6 +59,8 @@ const INFO_ROWS = [
 ];
 
 const MyPage = () => {
+    const navigate = useNavigate();
+    
     const [activeSidebar, setActiveSidebar] = useState<SidebarKey>("member");
     const { honeyCount, totalCount, jarsPerRow } = HONEY_WAREHOUSE_DUMMY;
     const honeyJars = Array.from({ length: totalCount }, (_, index) => index < honeyCount);
@@ -58,6 +68,9 @@ const MyPage = () => {
         honeyJars.slice(0, jarsPerRow),
         honeyJars.slice(jarsPerRow),
     ];
+    const { currentCount: usageCurrent, totalCount: usageTotal } = USAGE_STATUS_DUMMY;
+    const usageProgress = Math.min(usageCurrent / usageTotal, 1);
+    const usageRemaining = Math.max(usageTotal - usageCurrent, 0);
 
     return (
         <Wrapper>
@@ -166,9 +179,47 @@ const MyPage = () => {
                     )}
 
                     {activeSidebar === "usage" && (
-                        <Placeholder>
-                            {SIDEBAR_ITEMS.find((item) => item.key === activeSidebar)?.label}
-                        </Placeholder>
+                        <>
+                            <UsageTitle>동화 이용 현황</UsageTitle>
+                            <UsageCard>
+                                <UsageStatusMain>
+                                    무료 동화 생성{" "}
+                                    <UsageCount>
+                                        {usageCurrent} / {usageTotal}
+                                    </UsageCount>{" "}
+                                    회 완료
+                                </UsageStatusMain>
+
+                                <ProgressBarWrap>
+                                    <ProgressBarTrack>
+                                        <ProgressBarFill $progress={usageProgress} />
+                                    </ProgressBarTrack>
+                                    <ProgressBee
+                                        src={UsageBee}
+                                        alt=""
+                                        $progress={usageProgress}
+                                    />
+                                </ProgressBarWrap>
+
+                                <UsageSummary>
+                                    벌써 동화 {usageCurrent}개를 만들었어요!
+                                    <br />
+                                    아직 {usageRemaining}번 더 만들 수 있어요
+                                </UsageSummary>
+                            </UsageCard>
+
+                            <UsageButtonContainer>
+                                <YellowButton
+                                    type="button"
+                                    width={300}
+                                    height={68}
+                                    fontSize={32}
+                                    onClick={() => navigate("/tale/intro")}
+                                >
+                                    동화 만들러 가기
+                                </YellowButton>
+                            </UsageButtonContainer>
+                        </>
                     )}
                 </Main>
             </Container>
@@ -539,5 +590,80 @@ const Bee3 = styled.img`
     pointer-events: none;
 `;
 
-const Placeholder = styled.p`
+const UsageTitle = styled.h2`
+    margin: 0;
+    color: #424242;
+    font-size: 28px;
+    font-weight: 900;
+`;
+
+const UsageCard = styled.section`
+    background: #FFFFFF;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 60px;
+    padding: 44px 60px;
+    border-radius: 12px;
+    box-shadow: 1px 2px 4px 0 rgba(0, 0, 0, 0.25);
+`;
+
+const UsageStatusMain = styled.p`
+    margin: 0;
+    color: #1F1F1F;
+    font-size: 28px;
+    font-weight: 700;
+    text-align: center;
+`;
+
+const UsageCount = styled.span`
+    color: #64926B;
+    font-weight: 800;
+`;
+
+const ProgressBarWrap = styled.div`
+    position: relative;
+    width: 100%;
+    max-width: 800px;
+    box-shadow: 1px 2px 4px 0 rgba(0, 0, 0, 0.25);
+`;
+
+const ProgressBarTrack = styled.div`
+    width: 100%;
+    height: 32px;
+    background: #424242;
+    overflow: hidden;
+`;
+
+const ProgressBarFill = styled.div<{ $progress: number }>`
+    width: ${({ $progress }) => $progress * 100}%;
+    height: 100%;
+    background: linear-gradient(90deg, #FFDE21 0%, #BFA71DCC 100%);
+`;
+
+const ProgressBee = styled.img<{ $progress: number }>`
+    position: absolute;
+    top: -40px;
+    left: ${({ $progress }) => `${$progress * 100}%`};
+    width: 100px;
+    height: auto;
+    transform: translate(-50%, 0);
+`;
+
+const UsageSummary = styled.p`
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    color: #424242;
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 45px;
+`;
+
+const UsageButtonContainer = styled.div`
+    display: flex;
+    justify-content: center;
+    margin-top: 60px;
 `;
