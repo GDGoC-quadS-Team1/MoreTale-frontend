@@ -1,15 +1,24 @@
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import Slogan from "../components/Slogan";
 import LogoYellow from "../assets/images/logo-yellow.svg";
 import LogoBlack from "../assets/images/logo-black.svg";
 import GoogleIcon from "../assets/images/google.svg";
+import { consumeOAuthCallback, startGoogleLogin } from "../lib/auth";
 
 const LoginPage = () => {
     const navigate = useNavigate();
 
+    useEffect(() => {
+        const result = consumeOAuthCallback();
+        if (!result.handled) return;
+
+        navigate(result.hasProfile ? "/home" : "/signup", { replace: true });
+    }, [navigate]);
+
     const handleLogin = () => {
-        navigate("/signup");
+        startGoogleLogin();
     };
 
     return (

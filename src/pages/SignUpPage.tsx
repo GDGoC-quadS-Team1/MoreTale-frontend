@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { consumeOAuthCallback } from "../lib/auth";
 import styled from "styled-components";
 import Slogan from "../components/Slogan";
 import InputField from "../components/InputField";
@@ -20,6 +21,13 @@ const STORY_OPTIONS = ["포근포근 안아주는 이야기", "신나는 모험 
 
 const SignUpPage = () => {
     const navigate = useNavigate();
+
+    useEffect(() => {
+        const result = consumeOAuthCallback();
+        if (result.handled && result.hasProfile) {
+            navigate("/home", { replace: true });
+        }
+    }, [navigate]);
 
     const handleComplete = () => {
         navigate("/profile-complete");
