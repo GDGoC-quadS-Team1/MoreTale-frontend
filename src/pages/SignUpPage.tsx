@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+    buildCreateProfileRequest,
+    createUserProfile,
+    validateSignUpForm,
+} from "../apis/user";
 import { consumeOAuthCallback } from "../lib/auth";
 import styled from "styled-components";
 import Slogan from "../components/Slogan";
@@ -29,8 +34,41 @@ const SignUpPage = () => {
         }
     }, [navigate]);
 
-    const handleComplete = () => {
-        navigate("/profile-complete");
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState<string | null>(null);
+
+    const handleComplete = async () => {
+        const formState = {
+            name,
+            age,
+            livingWith,
+            livingWithOther,
+            protagonistLanguages,
+            guardianLanguages,
+            listeningLevel,
+            speakingLevel,
+            listeningLevel2,
+            speakingLevel2,
+            storyPreference,
+            storyPreferenceOther,
+        };
+        const validationError = validateSignUpForm(formState);
+        if (validationError) {
+            setSubmitError(validationError);
+            return;
+        }
+
+        setSubmitError(null);
+        setIsSubmitting(true);
+        try {
+            const body = buildCreateProfileRequest(formState);
+            await createUserProfile(body);
+            navigate("/profile-complete");
+        } catch {
+            setSubmitError("프로필 저장에 실패했습니다. 잠시 후 다시 시도해주세요.");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     // 1. 이름
@@ -297,7 +335,12 @@ const SignUpPage = () => {
                             </FieldContainer>
                         </InputContainer>
                         <CompleteButtonContainer>
-                            <CompleteButton type="button" onClick={handleComplete}>
+                            {submitError && <SubmitErrorText>{submitError}</SubmitErrorText>}
+                            <CompleteButton
+                                type="button"
+                                onClick={handleComplete}
+                                disabled={isSubmitting}
+                            >
                                 <ArrowIconImg src={ArrowIcon} alt="" />
                             </CompleteButton>
                         </CompleteButtonContainer>
@@ -542,7 +585,18 @@ const CompleteButtonContainer = styled.div`
     margin-top: 20px;
     width: 100%;
     display: flex;
-    justify-content: flex-end;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 12px;
+`;
+
+const SubmitErrorText = styled.p`
+    margin: 0;
+    color: #AE2929;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: right;
+    width: 100%;
 `;
 
 const CompleteButton = styled.button`
