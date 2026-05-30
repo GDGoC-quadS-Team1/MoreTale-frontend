@@ -246,9 +246,13 @@ export function getCurrentUser() {
     return apiFetch("/api/users/me") as Promise<{ data: UserResponse }>;
 }
 
+export type CreateProfileResponse = {
+    profileId: number;
+};
+
 export function createUserProfile(body: CreateProfileRequest) {
     return apiFetch("/api/users/profile", {
         method: "POST",
         body: JSON.stringify(body),
-    });
+    }) as Promise<{ data: CreateProfileResponse }>;
 }

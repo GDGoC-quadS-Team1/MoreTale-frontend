@@ -5,7 +5,7 @@ import {
     createUserProfile,
     validateSignUpForm,
 } from "../apis/user";
-import { consumeOAuthCallback } from "../lib/auth";
+import { consumeOAuthCallback, setProfileId } from "../lib/auth";
 import styled from "styled-components";
 import Slogan from "../components/Slogan";
 import InputField from "../components/InputField";
@@ -62,7 +62,8 @@ const SignUpPage = () => {
         setIsSubmitting(true);
         try {
             const body = buildCreateProfileRequest(formState);
-            await createUserProfile(body);
+            const { data } = await createUserProfile(body);
+            setProfileId(data.profileId);
             navigate("/profile-complete");
         } catch {
             setSubmitError("프로필 저장에 실패했습니다. 잠시 후 다시 시도해주세요.");

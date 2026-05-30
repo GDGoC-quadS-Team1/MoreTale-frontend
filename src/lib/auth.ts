@@ -1,5 +1,6 @@
 const TOKEN_KEY = "accessToken";
 const USER_ID_KEY = "userId";
+const PROFILE_ID_KEY = "profileId";
 
 export function getAccessToken(): string | null {
     return localStorage.getItem(TOKEN_KEY);
@@ -7,6 +8,17 @@ export function getAccessToken(): string | null {
 
 export function getUserId(): string | null {
     return localStorage.getItem(USER_ID_KEY);
+}
+
+export function getProfileId(): number | null {
+    const raw = localStorage.getItem(PROFILE_ID_KEY);
+    if (!raw) return null;
+    const id = Number(raw);
+    return Number.isFinite(id) ? id : null;
+}
+
+export function setProfileId(profileId: number) {
+    localStorage.setItem(PROFILE_ID_KEY, String(profileId));
 }
 
 export function setAuth(token: string, userId?: string) {
@@ -19,6 +31,7 @@ export function setAuth(token: string, userId?: string) {
 export function clearAuth() {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_ID_KEY);
+    localStorage.removeItem(PROFILE_ID_KEY);
 }
 
 export type OAuthCallbackResult =

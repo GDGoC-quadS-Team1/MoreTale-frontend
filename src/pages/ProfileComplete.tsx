@@ -2,12 +2,14 @@ import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import Slogan from "../components/Slogan";
 import YellowButton from "../components/YellowButton";
+import { getProfileId } from "../lib/auth";
 
 const ProfileComplete = () => {
     const navigate = useNavigate();
 
     const goToTale = () => {
-        navigate("/tale/complete");
+        const profileId = getProfileId();
+        navigate("/tale/complete", profileId != null ? { state: { profileId } } : undefined);
     };
 
     const goToHome = () => {
