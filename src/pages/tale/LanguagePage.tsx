@@ -37,12 +37,8 @@ export default LanguagePage;
 
 const Wrapper = styled.div`
     background: #FFDE21;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
     width: 100%;
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -73,6 +69,8 @@ const Title = styled.div`
 
 const Image = styled.img`
     height: 214px;
+    border: 1px solid #A0A0A0;
+    box-shadow: 0 4px 4px 0 rgba(0, 0, 0, 0.25);
 `;
 
 const LanguageContainer = styled.div`
