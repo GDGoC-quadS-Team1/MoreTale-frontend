@@ -1,65 +1,106 @@
-import { useState, useRef } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import styled from "styled-components";
 import Header from "../../components/Header";
+import { getStoryDetail, type StoryDetail } from "../../apis/stories";
+import { languageCodeToFlag } from "../../apis/tale";
 import PencilIcon from "../../assets/images/tale/pencil.svg";
-import Korea from "../../assets/images/tale/flag/korea.png";
-import Japan from "../../assets/images/tale/flag/japan.png";
+import Finish from "../../assets/images/tale/finish.png";
 import ArrowLeftIcon from "../../assets/images/tale/arrow-left.svg";
 import ArrowRightIcon from "../../assets/images/tale/arrow-right.svg";
 import SpeakerIcon from "../../assets/images/tale/speaker.svg";
 import BookmarkIcon from "../../assets/images/tale/bookmark.svg";
 import LibraryIcon from "../../assets/images/icon/library.svg";
 import SettingIcon from "../../assets/images/icon/setting.svg";
-// mid-demo source
-import Image01 from "../../assets/mid-demo/illustrations/page_01.png";
-import Image02 from "../../assets/mid-demo/illustrations/page_02.png";
-import audio01Primary from "../../assets/mid-demo/audio/01_korean/page_01_primary.wav";
-import audio02Primary from "../../assets/mid-demo/audio/01_korean/page_02_primary.wav";
-import audio01Secondary from "../../assets/mid-demo/audio/02_japanese/page_01_secondary.wav";
-import audio02Secondary from "../../assets/mid-demo/audio/02_japanese/page_02_secondary.wav";
 
-const SLIDES = [
-    {
-        image: Image01,
-        text_primary: "깊은 밤, 언제나 빛나던 달이 오늘은 보이지 않았어요. 하늘은 온통 깜깜했죠. 모두가 고개를 갸웃거렸답니다.",
-        text_secondary: "深い夜、いつも輝いていた月が、今日は見えませんでした。空は真っ暗でした。みんなが首をかしげました。",
-        audio_primary: audio01Primary,
-        audio_secondary: audio01Secondary,
-    },
-    {
-        image: Image02,
-        text_primary: "저 멀리 달나라에 사는 달토끼 달리도 깜짝 놀랐어요. 밤마다 떡을 찧어야 하는데, 달빛이 없으니 아무것도 보이지 않았거든요.",
-        text_secondary: "遠い月の国に住む月うさぎのダリもびっくりしました。毎晩お餅をつかなければならないのに、月の光がないと何も見えなかったからです。",
-        audio_primary: audio02Primary,
-        audio_secondary: audio02Secondary,
-    },
-];
+type ReadLocationState = {
+    startFromLast?: boolean;
+    storyId?: number;
+};
 
 const ReadPage = () => {
     const navigate = useNavigate();
     const location = useLocation();
+    const { storyId: storyIdParam } = useParams<{ storyId: string }>();
+    const locationState = location.state as ReadLocationState | null;
 
-    const initialSlide = location.state?.startFromLast ? SLIDES.length - 1 : 0;
-    const [currentSlide, setCurrentSlide] = useState(initialSlide);
+    const storyId =
+        (storyIdParam ? Number(storyIdParam) : undefined) ??
+        locationState?.storyId;
+
+    const [story, setStory] = useState<StoryDetail | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [currentSlide, setCurrentSlide] = useState(0);
+    const [showFinishScreen, setShowFinishScreen] = useState(false);
+
     const audioPrimaryRef = useRef<HTMLAudioElement | null>(null);
     const audioSecondaryRef = useRef<HTMLAudioElement | null>(null);
 
-    const slide = SLIDES[currentSlide];
+    useEffect(() => {
+        if (storyId == null || Number.isNaN(storyId)) {
+            setError("동화 정보를 찾을 수 없습니다.");
+            setIsLoading(false);
+            return;
+        }
+
+        let cancelled = false;
+
+        (async () => {
+            try {
+                const { data } = await getStoryDetail(storyId);
+                if (!cancelled) {
+                    const sortedSlides = [...data.slides].sort((a, b) => a.order - b.order);
+                    setStory({ ...data, slides: sortedSlides });
+                    setError(null);
+                    setShowFinishScreen(false);
+                    setCurrentSlide(
+                        locationState?.startFromLast && sortedSlides.length > 0
+                            ? sortedSlides.length - 1
+                            : 0,
+                    );
+                }
+            } catch {
+                if (!cancelled) {
+                    setError("동화를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.");
+                }
+            } finally {
+                if (!cancelled) {
+                    setIsLoading(false);
+                }
+            }
+        })();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [storyId, locationState?.startFromLast]);
+
+    const slides = story?.slides ?? [];
+    const slide = slides[currentSlide];
     const isFirstSlide = currentSlide === 0;
-    const isLastSlide = currentSlide === SLIDES.length - 1;
+    const isLastSlide = slides.length > 0 && currentSlide === slides.length - 1;
+
+    const primaryFlag = story ? languageCodeToFlag(story.primaryLanguage) : undefined;
+    const secondaryFlag = story ? languageCodeToFlag(story.secondaryLanguage) : undefined;
 
     const handleLeftClick = () => {
+        if (showFinishScreen) {
+            setShowFinishScreen(false);
+            setCurrentSlide(slides.length - 1);
+            return;
+        }
         if (isFirstSlide) return;
         setCurrentSlide((prev) => prev - 1);
     };
 
     const handleRightClick = () => {
+        if (showFinishScreen) return;
         if (isLastSlide) {
-            navigate("/tale/finish");
-        } else {
-            setCurrentSlide((prev) => prev + 1);
+            setShowFinishScreen(true);
+            return;
         }
+        setCurrentSlide((prev) => prev + 1);
     };
 
     const playPrimary = () => {
@@ -76,63 +117,144 @@ const ReadPage = () => {
         }
     };
 
+    const leftDisabled = showFinishScreen ? false : isFirstSlide;
+    const rightDisabled = showFinishScreen;
+    const pageLabel = showFinishScreen
+        ? `${slides.length} / ${slides.length} 쪽`
+        : `${currentSlide + 1} / ${slides.length} 쪽`;
+
+    if (isLoading) {
+        return (
+            <Wrapper>
+                <Header activeMenu="tale" />
+                <Container>
+                    <StatusText>동화를 불러오는 중이에요...</StatusText>
+                </Container>
+            </Wrapper>
+        );
+    }
+
+    if (error || !story || slides.length === 0) {
+        return (
+            <Wrapper>
+                <Header activeMenu="tale" />
+                <Container>
+                    <StatusText>{error ?? "동화를 불러올 수 없습니다."}</StatusText>
+                </Container>
+            </Wrapper>
+        );
+    }
+
     return (
         <Wrapper>
-            <audio ref={audioPrimaryRef} src={slide.audio_primary} preload="metadata" />
-            <audio ref={audioSecondaryRef} src={slide.audio_secondary} preload="metadata" />
+            {!showFinishScreen && slide && (
+                <>
+                    <audio
+                        key={`primary-${slide.slideId}`}
+                        ref={audioPrimaryRef}
+                        src={slide.audioUrlKr}
+                        preload="metadata"
+                    />
+                    <audio
+                        key={`secondary-${slide.slideId}`}
+                        ref={audioSecondaryRef}
+                        src={slide.audioUrlNative}
+                        preload="metadata"
+                    />
+                </>
+            )}
             <Header activeMenu="tale" />
             <Container>
-                {/* 제목 및 아이콘 */}
                 <InfoContainer>
                     <LeftContainer>
-                        <Title>달토끼와 츠키 토끼의 빛나는 선물</Title>
+                        <Title>{story.title}</Title>
                         <Icon src={PencilIcon} alt="" />
                     </LeftContainer>
                     <RightContainer>
-                        <PageIndicator>{currentSlide + 1} / {SLIDES.length} 쪽</PageIndicator>
+                        <PageIndicator>{pageLabel}</PageIndicator>
                         <IconButton type="button"><Icon src={LibraryIcon} alt="" /></IconButton>
                         <IconButton type="button"><Icon src={SettingIcon} alt="" /></IconButton>
                     </RightContainer>
                 </InfoContainer>
 
-                {/* 내용 */}
                 <BookContainer>
-                    <Bookmark src={BookmarkIcon} alt="" />
-                    <NavButton $position="left" type="button" aria-label="" onClick={handleLeftClick} disabled={isFirstSlide}>
+                    {!showFinishScreen && <Bookmark src={BookmarkIcon} alt="" />}
+                    <NavButton
+                        $position="left"
+                        type="button"
+                        aria-label={showFinishScreen ? "마지막 페이지" : "이전 페이지"}
+                        onClick={handleLeftClick}
+                        disabled={leftDisabled}
+                    >
                         <Image height={26} src={ArrowLeftIcon} alt="" />
                     </NavButton>
-                    <NavButton $position="right" type="button" aria-label="" onClick={handleRightClick}>
+                    <NavButton
+                        $position="right"
+                        type="button"
+                        aria-label="다음 페이지"
+                        onClick={handleRightClick}
+                        disabled={rightDisabled}
+                    >
                         <Image height={26} src={ArrowRightIcon} alt="" />
                     </NavButton>
 
-                    {/* 일러스트 */}
-                    <LeftSection>
-                        <PageImage src={slide.image} alt="" />
-                    </LeftSection>
-
-                    {/* 텍스트 */}
-                    <RightSection>
-                        {/* 언어 1 */}
-                        <TextContainer>
-                            <Flag src={Korea} alt="" />
-                            <Lang>
-                                <LangText>{slide.text_primary}</LangText>
-                                <SpeakerButton type="button" aria-label="" onClick={playPrimary}>
-                                    <Image height={36} src={SpeakerIcon} alt="" />
-                                </SpeakerButton>
-                            </Lang>
-                        </TextContainer>
-                        {/* 언어 2 */}
-                        <TextContainer>
-                            <Flag src={Japan} alt="" />
-                            <Lang>
-                                <LangText>{slide.text_secondary}</LangText>
-                                <SpeakerButton type="button" aria-label="" onClick={playSecondary}>
-                                    <Image height={36} src={SpeakerIcon} alt="" />
-                                </SpeakerButton>
-                            </Lang>
-                        </TextContainer>
-                    </RightSection>
+                    {showFinishScreen ? (
+                        <FinishViewport>
+                            <FinishBody>
+                                <FinishText>
+                                    &lt;{story.title}&gt;을 다 읽었어요!<br />
+                                    오늘의 꿀스티커를 받아요!
+                                </FinishText>
+                                <ImageContainer>
+                                    <HoneyImg src={Finish} alt="" />
+                                </ImageContainer>
+                                <ButtonGroup>
+                                    <YellowButton type="button" onClick={() => navigate("/voca")}>
+                                        단어장
+                                    </YellowButton>
+                                    <YellowButton type="button" onClick={() => navigate("/quiz")}>
+                                        퀴즈 풀기
+                                    </YellowButton>
+                                </ButtonGroup>
+                            </FinishBody>
+                        </FinishViewport>
+                    ) : (
+                        slide && (
+                            <>
+                                <LeftSection>
+                                    <PageImage src={slide.imageUrl} alt="" />
+                                </LeftSection>
+                                <RightSection>
+                                    <TextContainer>
+                                        {primaryFlag ? (
+                                            <Flag src={primaryFlag} alt="" />
+                                        ) : (
+                                            <FlagPlaceholder>{story.primaryLanguage}</FlagPlaceholder>
+                                        )}
+                                        <Lang>
+                                            <LangText>{slide.textKr}</LangText>
+                                            <SpeakerButton type="button" aria-label="" onClick={playPrimary}>
+                                                <Image height={36} src={SpeakerIcon} alt="" />
+                                            </SpeakerButton>
+                                        </Lang>
+                                    </TextContainer>
+                                    <TextContainer>
+                                        {secondaryFlag ? (
+                                            <Flag src={secondaryFlag} alt="" />
+                                        ) : (
+                                            <FlagPlaceholder>{story.secondaryLanguage}</FlagPlaceholder>
+                                        )}
+                                        <Lang>
+                                            <LangText>{slide.textNative}</LangText>
+                                            <SpeakerButton type="button" aria-label="" onClick={playSecondary}>
+                                                <Image height={36} src={SpeakerIcon} alt="" />
+                                            </SpeakerButton>
+                                        </Lang>
+                                    </TextContainer>
+                                </RightSection>
+                            </>
+                        )
+                    )}
                 </BookContainer>
             </Container>
         </Wrapper>
@@ -166,6 +288,14 @@ const Container = styled.div`
     padding: 50px 60px;
     box-sizing: border-box;
     overflow: auto;
+`;
+
+const StatusText = styled.p`
+    margin: 0;
+    color: #424242;
+    font-size: 24px;
+    font-weight: 600;
+    text-align: center;
 `;
 
 const LeftContainer = styled.div`
@@ -243,6 +373,7 @@ const BookContainer = styled.div`
     justify-content: flex-start;
     overflow: visible;
     box-shadow: 0 4px 4px rgba(0, 0, 0, 0.25);
+    min-height: 0;
 `;
 
 const LeftSection = styled.div`
@@ -292,7 +423,73 @@ const NavButton = styled.button<{ $position: "left" | "right" }>`
 
     &:disabled {
         cursor: not-allowed;
+        opacity: 0.5;
     }
+`;
+
+const FinishViewport = styled.div`
+    flex: 1;
+    width: 100%;
+    min-width: 0;
+    overflow: auto;
+    border-radius: 20px;
+`;
+
+const FinishBody = styled.div`
+    width: 100%;
+    box-sizing: border-box;
+    padding: 80px 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 40px;
+`;
+
+const FinishText = styled.div`
+    color: #1F1F1F;
+    font-size: 30px;
+    font-weight: 700;
+    font-style: normal;
+    line-height: 45px;
+    text-align: center;
+    cursor: default;
+`;
+
+const ImageContainer = styled.div`
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-right: 60px;
+`;
+
+const HoneyImg = styled.img`
+    height: 220px;
+`;
+
+const ButtonGroup = styled.div`
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 40px;
+`;
+
+const YellowButton = styled.button`
+    width: 180px;
+    padding: 8px 0;
+    color: #424242;
+    text-align: center;
+    font-size: 30px;
+    font-style: normal;
+    font-weight: 800;
+    line-height: 50px;
+    border-radius: 20px;
+    background: #FFDE21;
+    box-shadow: 0 4px 4px 0 rgba(0, 0, 0, 0.25);
+    border: none;
+    cursor: pointer;
 `;
 
 const PageImage = styled.img`
@@ -316,6 +513,18 @@ const TextContainer = styled.div`
 const Flag = styled.img`
     width: 65px;
     height: 43px;
+`;
+
+const FlagPlaceholder = styled.div`
+    width: 65px;
+    min-height: 43px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: #424242;
+    text-align: center;
 `;
 
 const Lang = styled.div`

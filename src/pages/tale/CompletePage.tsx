@@ -14,6 +14,7 @@ import Flower from "../../assets/images/tale/flower.png";
 
 type CompleteLocationState = {
     profileId?: number;
+    storyId?: number;
 };
 
 const CompletePage = () => {
@@ -116,8 +117,12 @@ const CompletePage = () => {
                             height={68}
                             fontSize={28}
                             borderRadius={5}
-                            onClick={() => navigate("/tale/read")}
-                            disabled={isLoading || !!error}
+                            onClick={() => {
+                                if (state?.storyId != null) {
+                                    navigate(`/tale/read/${state.storyId}`);
+                                }
+                            }}
+                            disabled={isLoading || !!error || state?.storyId == null}
                         >
                             이야기 보러 가기
                         </YellowButton>

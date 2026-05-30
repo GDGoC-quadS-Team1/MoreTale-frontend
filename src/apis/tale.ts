@@ -51,10 +51,25 @@ const FLAG_BY_LANGUAGE_DISPLAY: Record<string, string> = {
     ZH: ChinaFlag,
     ES: SpainFlag,
     VI: VietnamFlag,
+    ko: KoreaFlag,
+    en: EnglishFlag,
+    ja: JapanFlag,
+    zh: ChinaFlag,
+    es: SpainFlag,
+    vi: VietnamFlag,
 };
 
 export function languageDisplayToFlag(display: string): string | undefined {
     return FLAG_BY_LANGUAGE_DISPLAY[display.trim()];
+}
+
+export function languageCodeToFlag(code: string): string | undefined {
+    const normalized = code.trim();
+    return (
+        FLAG_BY_LANGUAGE_DISPLAY[normalized] ??
+        FLAG_BY_LANGUAGE_DISPLAY[normalized.toLowerCase()] ??
+        FLAG_BY_LANGUAGE_DISPLAY[normalized.toUpperCase()]
+    );
 }
 
 export function getStoryInit(profileId: number) {
