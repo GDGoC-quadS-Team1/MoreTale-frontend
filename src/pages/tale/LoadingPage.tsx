@@ -52,7 +52,7 @@ const Container = styled.div`
     align-items: center;
     justify-content: center;
     gap: 32px;
-    padding-bottom: 40px;
+    padding: 20px 0;
 `;
 
 const Title = styled.div`

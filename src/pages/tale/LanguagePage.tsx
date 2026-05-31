@@ -1,12 +1,127 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import Header from "../../components/Header";
 import YellowButton from "../../components/YellowButton";
-import Korea from "../../assets/images/tale/flag/korea.png";
-import Japan from "../../assets/images/tale/flag/japan.png";
+import { getMyPage } from "../../apis/user";
+import {
+    LANGUAGE_OPTIONS,
+    LANGUAGE_UI,
+    languageDisplayToFlag,
+    type LanguageDisplay,
+} from "../../apis/tale";
+
+type LanguageSlot = "first" | "second";
+
+function isLanguageDisplay(value: string): value is LanguageDisplay {
+    return (LANGUAGE_OPTIONS as readonly string[]).includes(value);
+}
+
+function getLanguageUi(language: string) {
+    if (isLanguageDisplay(language)) {
+        return LANGUAGE_UI[language];
+    }
+    return { nativeLabel: language, changeLabel: "변경" };
+}
 
 const LanguagePage = () => {
     const navigate = useNavigate();
+    const [firstLanguage, setFirstLanguage] = useState<LanguageDisplay>("한국어");
+    const [secondLanguage, setSecondLanguage] = useState<LanguageDisplay>("영어");
+    const [editingSlot, setEditingSlot] = useState<LanguageSlot | null>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        (async () => {
+            try {
+                const { data } = await getMyPage();
+                const profile = data.profiles[0];
+                if (!cancelled && profile) {
+                    let nextFirst: LanguageDisplay = firstLanguage;
+                    let nextSecond: LanguageDisplay = secondLanguage;
+
+                    if (isLanguageDisplay(profile.firstLanguageDisplay)) {
+                        nextFirst = profile.firstLanguageDisplay;
+                    }
+                    if (isLanguageDisplay(profile.secondLanguageDisplay)) {
+                        nextSecond = profile.secondLanguageDisplay;
+                    }
+
+                    if (nextFirst === nextSecond) {
+                        const alternative = LANGUAGE_OPTIONS.find((lang) => lang !== nextFirst);
+                        if (alternative) {
+                            nextSecond = alternative;
+                        }
+                    }
+
+                    setFirstLanguage(nextFirst);
+                    setSecondLanguage(nextSecond);
+                }
+            } catch {
+                // 프로필을 불러오지 못하면 기본값
+            }
+        })();
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    const getAvailableOptions = (slot: LanguageSlot) => {
+        const excluded = slot === "first" ? secondLanguage : firstLanguage;
+        return LANGUAGE_OPTIONS.filter((lang) => lang !== excluded);
+    };
+
+    const renderLanguageItem = (
+        language: LanguageDisplay,
+        slot: LanguageSlot,
+        onSelect: (lang: LanguageDisplay) => void,
+    ) => {
+        const ui = getLanguageUi(language);
+        const flag = languageDisplayToFlag(language);
+        const availableOptions = getAvailableOptions(slot);
+
+        return (
+            <LanguageItem>
+                <FlagImage src={flag} alt={ui.nativeLabel} />
+                <LanguageText>{ui.nativeLabel}</LanguageText>
+                <ChangeButton
+                    type="button"
+                    onClick={() => setEditingSlot(editingSlot === slot ? null : slot)}
+                >
+                    {ui.changeLabel}
+                </ChangeButton>
+                {editingSlot === slot && (
+                    <LanguagePicker>
+                        {availableOptions.map((lang) => {
+                            const optionUi = LANGUAGE_UI[lang];
+                            const optionFlag = languageDisplayToFlag(lang);
+
+                            return (
+                                <PickerItem
+                                    key={lang}
+                                    type="button"
+                                    $selected={lang === language}
+                                    onClick={() => {
+                                        onSelect(lang);
+                                        setEditingSlot(null);
+                                    }}
+                                >
+                                    {optionFlag ? (
+                                        <PickerFlag src={optionFlag} alt={optionUi.nativeLabel} />
+                                    ) : (
+                                        <PickerFlagPlaceholder />
+                                    )}
+                                    <PickerLabel>{optionUi.nativeLabel}</PickerLabel>
+                                </PickerItem>
+                            );
+                        })}
+                    </LanguagePicker>
+                )}
+            </LanguageItem>
+        );
+    };
 
     return (
         <Wrapper>
@@ -14,18 +129,17 @@ const LanguagePage = () => {
             <Container>
                 <Title>두 가지 언어로<br/>이야기를 만들어볼게요!</Title>
                 <LanguageContainer>
-                    <LanguageItem>
-                        <Image src={Korea} alt="한국어" />
-                        <LanguageText>한국어</LanguageText>
-                        <Button>변경</Button>
-                    </LanguageItem>
-                    <LanguageItem>
-                        <Image src={Japan} alt="일본어" />
-                        <LanguageText>日本語</LanguageText>
-                        <Button>変更</Button>
-                    </LanguageItem>
+                    {renderLanguageItem(firstLanguage, "first", setFirstLanguage)}
+                    {renderLanguageItem(secondLanguage, "second", setSecondLanguage)}
                 </LanguageContainer>
-                <YellowButton type="button" width={158} height={63} fontSize={30} borderRadius={5} onClick={() => navigate("/tale/loading")}>
+                <YellowButton
+                    type="button"
+                    width={158}
+                    height={63}
+                    fontSize={30}
+                    borderRadius={5}
+                    onClick={() => navigate("/tale/loading")}
+                >
                     좋아요!
                 </YellowButton>
             </Container>
@@ -55,6 +169,7 @@ const Container = styled.div`
     align-items: center;
     justify-content: center;
     gap: 72px;
+    padding: 20px 0;
 `;
 
 const Title = styled.div`
@@ -67,8 +182,10 @@ const Title = styled.div`
     cursor: default;
 `;
 
-const Image = styled.img`
+const FlagImage = styled.img`
+    width: 320px;
     height: 214px;
+    object-fit: cover;
     border: 1px solid #A0A0A0;
     box-shadow: 0 4px 4px 0 rgba(0, 0, 0, 0.25);
 `;
@@ -82,6 +199,7 @@ const LanguageContainer = styled.div`
 `;
 
 const LanguageItem = styled.div`
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -99,7 +217,7 @@ const LanguageText = styled.div`
     cursor: default;
 `;
 
-const Button = styled.button`
+const ChangeButton = styled.button`
     width: 100px;
     height: 32px;
     background: #CFCFCF;
@@ -111,4 +229,64 @@ const Button = styled.button`
     font-weight: 700;
     line-height: 24px;
     cursor: pointer;
+`;
+
+const LanguagePicker = styled.div`
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 220px;
+    max-height: 140px;
+    padding: 12px;
+    background: #FFFFFF;
+    border: 1px solid #A0A0A0;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+`;
+
+const PickerItem = styled.button<{ $selected: boolean }>`
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 8px 10px;
+    border: none;
+    border-radius: 8px;
+    background: ${({ $selected }) => ($selected ? "#ffde21" : "#f5f5f5")};
+    cursor: pointer;
+    flex-shrink: 0;
+
+    &:hover {
+        background: ${({ $selected }) => ($selected ? "#ffde21" : "#ececec")};
+    }
+`;
+
+const PickerFlag = styled.img`
+    width: 48px;
+    height: 32px;
+    object-fit: cover;
+    border: 1px solid #d0d0d0;
+    flex-shrink: 0;
+`;
+
+const PickerFlagPlaceholder = styled.div`
+    width: 48px;
+    height: 32px;
+    border: 1px solid #d0d0d0;
+    flex-shrink: 0;
+    background: #f0f0f0;
+`;
+
+const PickerLabel = styled.span`
+    color: #1f1f1f;
+    font-size: 16px;
+    font-weight: 600;
+    text-align: left;
 `;
