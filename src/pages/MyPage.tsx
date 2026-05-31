@@ -5,12 +5,14 @@ import Header from "../components/Header";
 import YellowButton from "../components/YellowButton";
 import {
     buildMyPageInfoRows,
+    deleteUser,
     getHoneyWarehouseDisplay,
     getMyPage,
     getUsageStatusDisplay,
     HONEY_JARS_PER_STORY,
     type MyPageData,
 } from "../apis/user";
+import { clearAuth } from "../lib/auth";
 import ProfileDefault from "../assets/images/mypage/profile-default.svg";
 // import MaleIcon from "../assets/images/mypage/male.svg";
 // import FemaleIcon from "../assets/images/mypage/female.svg";
@@ -39,6 +41,27 @@ const MyPage = () => {
     const [myPageData, setMyPageData] = useState<MyPageData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [isWithdrawing, setIsWithdrawing] = useState(false);
+
+    const handleWithdraw = async () => {
+        if (isWithdrawing) return;
+
+        const confirmed = window.confirm(
+            "[moretale]\n정말 탈퇴하시겠어요?\n탈퇴하면 모든 데이터가 삭제되며 복구할 수 없습니다.",
+        );
+        if (!confirmed) return;
+
+        setIsWithdrawing(true);
+        try {
+            await deleteUser();
+            clearAuth();
+            navigate("/login", { replace: true });
+        } catch {
+            window.alert("회원 탈퇴에 실패했습니다. 잠시 후 다시 시도해주세요.");
+        } finally {
+            setIsWithdrawing(false);
+        }
+    };
 
     useEffect(() => {
         let cancelled = false;
@@ -147,7 +170,13 @@ const MyPage = () => {
                                     </NameRow>
                                     <Email>{accountInfo.email}</Email>
                                 </ProfileInfoContainer>
-                                <WithdrawButton type="button">회원 탈퇴</WithdrawButton>
+                                <WithdrawButton
+                                    type="button"
+                                    onClick={handleWithdraw}
+                                    disabled={isWithdrawing}
+                                >
+                                    {isWithdrawing ? "탈퇴 처리 중..." : "회원 탈퇴"}
+                                </WithdrawButton>
                             </ProfileCard>
 
                             <SectionTitle>프로필 정보</SectionTitle>
@@ -445,6 +474,11 @@ const WithdrawButton = styled.button`
     font-weight: 800;
     white-space: nowrap;
     cursor: pointer;
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
 `;
 
 const SectionTitle = styled.p`

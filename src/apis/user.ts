@@ -437,3 +437,9 @@ export function buildMyPageInfoRows(profile: MyPageProfile) {
 export function getMyPage() {
     return apiFetch("/api/users/mypage") as Promise<{ data: MyPageData }>;
 }
+
+export function deleteUser() {
+    return apiFetch("/api/users/delete", {
+        method: "DELETE",
+    }) as Promise<{ success: boolean; data: Record<string, never>; message: string }>;
+}
