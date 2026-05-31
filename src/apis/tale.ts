@@ -30,6 +30,8 @@ export type StoryInitData = {
     familyStructure: FamilyStructure;
     customFamilyStructure?: string;
     recommendedTaleTitle: string;
+    storyId: number;
+    coverImageUrl: string | null;
 };
 
 type StoryInitResponse = {

@@ -42,3 +42,26 @@ type StoryDetailResponse = {
 export function getStoryDetail(storyId: number) {
     return apiFetch(`/api/stories/${storyId}`) as Promise<StoryDetailResponse>;
 }
+
+export type SaveStorySlide = {
+    order: number;
+    imageUrl: string;
+    textKr: string;
+    textNative: string;
+    audioUrlKr: string;
+    audioUrlNative: string;
+};
+
+export type SaveStoryRequest = {
+    title: string;
+    prompt: string;
+    profileId: number;
+    slides: SaveStorySlide[];
+};
+
+export function saveStory(body: SaveStoryRequest) {
+    return apiFetch("/api/stories", {
+        method: "POST",
+        body: JSON.stringify(body),
+    }) as Promise<StoryDetailResponse>;
+}

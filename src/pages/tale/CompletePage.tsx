@@ -3,18 +3,17 @@ import { useLocation, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import Header from "../../components/Header";
 import YellowButton from "../../components/YellowButton";
+import { getStoryDetail, saveStory } from "../../apis/stories";
 import {
     getStoryInit,
     languageDisplayToFlag,
     type StoryInitData,
 } from "../../apis/tale";
 import { getProfileId } from "../../lib/auth";
-import BookCover from "../../assets/images/tale/book-cover-ex.png";
 import Flower from "../../assets/images/tale/flower.png";
 
 type CompleteLocationState = {
     profileId?: number;
-    storyId?: number;
 };
 
 const CompletePage = () => {
@@ -24,7 +23,9 @@ const CompletePage = () => {
 
     const [storyInit, setStoryInit] = useState<StoryInitData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [saveError, setSaveError] = useState<string | null>(null);
 
     useEffect(() => {
         const profileId = state?.profileId ?? getProfileId();
@@ -66,6 +67,48 @@ const CompletePage = () => {
         ? languageDisplayToFlag(storyInit.secondLanguageDisplay)
         : undefined;
 
+    const handleSaveToLibrary = async () => {
+        if (!storyInit?.storyId) return;
+
+        setIsSaving(true);
+        setSaveError(null);
+
+        try {
+            const { data } = await getStoryDetail(storyInit.storyId);
+            const slides = [...data.slides]
+                .sort((a, b) => a.order - b.order)
+                .map(
+                    ({
+                        order,
+                        imageUrl,
+                        textKr,
+                        textNative,
+                        audioUrlKr,
+                        audioUrlNative,
+                    }) => ({
+                        order,
+                        imageUrl,
+                        textKr,
+                        textNative,
+                        audioUrlKr,
+                        audioUrlNative,
+                    }),
+                );
+
+            await saveStory({
+                title: data.title,
+                prompt: data.prompt,
+                profileId: storyInit.profileId,
+                slides,
+            });
+            navigate("/lib");
+        } catch {
+            setSaveError("도서관에 저장하지 못했습니다. 잠시 후 다시 시도해주세요.");
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
     return (
         <Wrapper>
             <Header activeMenu="tale" />
@@ -75,7 +118,13 @@ const CompletePage = () => {
                 <RowContainer>
                     <BookImageContainer>
                         <FlowerImage height={380} src={Flower} alt="" />
-                        <BookImage height={260} src={BookCover} alt="" />
+                        {storyInit?.coverImageUrl && (
+                            <BookImage
+                                height={260}
+                                src={storyInit.coverImageUrl}
+                                alt={storyInit.recommendedTaleTitle ?? ""}
+                            />
+                        )}
                         {storyInit?.recommendedTaleTitle && (
                             <TaleTitle>{storyInit.recommendedTaleTitle}</TaleTitle>
                         )}
@@ -118,14 +167,15 @@ const CompletePage = () => {
                             fontSize={28}
                             borderRadius={5}
                             onClick={() => {
-                                if (state?.storyId != null) {
-                                    navigate(`/tale/read/${state.storyId}`);
+                                if (storyInit?.storyId != null) {
+                                    navigate(`/tale/read/${storyInit.storyId}`);
                                 }
                             }}
-                            disabled={isLoading || !!error || state?.storyId == null}
+                            disabled={isLoading || !!error || storyInit?.storyId == null}
                         >
                             이야기 보러 가기
                         </YellowButton>
+                        {saveError && <SaveErrorText>{saveError}</SaveErrorText>}
                         <YellowButton
                             type="button"
                             width={320}
@@ -134,9 +184,15 @@ const CompletePage = () => {
                             borderRadius={5}
                             backgroundColor={"#515050"}
                             color={"#FFDE21"}
-                            disabled={isLoading || !!error}
+                            onClick={handleSaveToLibrary}
+                            disabled={
+                                isLoading ||
+                                isSaving ||
+                                !!error ||
+                                storyInit?.storyId == null
+                            }
                         >
-                            도서관에 넣기
+                            {isSaving ? "저장 중..." : "도서관에 넣기"}
                         </YellowButton>
                     </ColumnContainer>
                 </RowContainer>
@@ -185,6 +241,16 @@ const ErrorText = styled.p`
     font-size: 18px;
     font-weight: 600;
     text-align: center;
+`;
+
+const SaveErrorText = styled.p`
+    margin: 0;
+    color: #F02828;
+    font-size: 16px;
+    font-weight: 600;
+    text-align: center;
+    max-width: 320px;
+    line-height: 1.4;
 `;
 
 const Image = styled.img`
