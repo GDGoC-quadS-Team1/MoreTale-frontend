@@ -256,3 +256,184 @@ export function createUserProfile(body: CreateProfileRequest) {
         body: JSON.stringify(body),
     }) as Promise<{ data: CreateProfileResponse }>;
 }
+
+export type MyPageAccountInfo = {
+    userId: number;
+    email: string;
+    nickname: string;
+    provider: string;
+    createdAt: string;
+};
+
+export type MyPageProfile = {
+    profileId: number;
+    userId: number;
+    nickname: string;
+    childName: string;
+    childAge: number;
+    ageGroup: AgeGroup;
+    firstLanguage: LanguageCode;
+    customFirstLanguage?: string;
+    firstLanguageDisplay: string;
+    secondLanguage: LanguageCode;
+    customSecondLanguage?: string;
+    secondLanguageDisplay: string;
+    firstLanguageProficiency: ProficiencyLevel;
+    secondLanguageProficiency: ProficiencyLevel;
+    firstLanguageListening: ProficiencyLevel;
+    firstLanguageSpeaking: ProficiencyLevel;
+    secondLanguageListening: ProficiencyLevel;
+    secondLanguageSpeaking: ProficiencyLevel;
+    familyStructure: FamilyStructure;
+    customFamilyStructure?: string;
+    storyPreference: StoryPreference;
+    customStoryPreference?: string;
+    childNationality?: string;
+    parentCountry?: string;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type MyPageUsageStatus = {
+    honeyJarCount: number;
+    canGenerateFreeStory: boolean;
+    remainingHoneyJarForFree: number;
+    totalStoriesCreated: number;
+};
+
+export type MyPageRecentStory = {
+    storyId: number;
+    title: string;
+    childName: string;
+    primaryLanguage: string;
+    secondaryLanguage: string;
+    thumbnailUrl: string;
+    isPublic: boolean;
+    createdAt: string;
+};
+
+export type MyPageData = {
+    accountInfo: MyPageAccountInfo;
+    profiles: MyPageProfile[];
+    usageStatus: MyPageUsageStatus;
+    recentStories: MyPageRecentStory[];
+};
+
+const PROFICIENCY_STAGE_LABEL: Record<ProficiencyLevel, string> = {
+    EGG: "이제 막 배우는 알",
+    LARVA: "조금 알아듣는 애벌레",
+    PUPA: "어느 정도 익숙한 번데기",
+    BEE: "혼자서도 읽는 꿀벌",
+};
+
+const STORY_PREFERENCE_TAG: Record<Exclude<StoryPreference, "CUSTOM">, string> = {
+    WARM_HUG: "#포근포근_안아주는_이야기",
+    FUN_ADVENTURE: "#신나는_모험_이야기",
+    DAILY_LIFE: "#오늘_하루를_닮은_이야기",
+};
+
+/** 무료 동화 1회 생성에 필요한 꿀단지 수 */
+export const HONEY_JARS_PER_STORY = 10;
+
+/** 무료 생성까지 모은 꿀단지 수 (UI 진행률용) */
+export function getHoneyProgressCollected(usage: MyPageUsageStatus): number {
+    return Math.min(
+        HONEY_JARS_PER_STORY,
+        Math.max(0, HONEY_JARS_PER_STORY - usage.remainingHoneyJarForFree),
+    );
+}
+
+export function getHoneyWarehouseDisplay(usage: MyPageUsageStatus) {
+    return {
+        honeyJarCount: usage.honeyJarCount,
+        filledJars: getHoneyProgressCollected(usage),
+        totalCount: HONEY_JARS_PER_STORY,
+        remainingForFree: usage.remainingHoneyJarForFree,
+        canGenerateFreeStory: usage.canGenerateFreeStory,
+    };
+}
+
+/** 가입 시 제공되는 무료 동화 생성 횟수 (꿀 창고와 별개) */
+export const FREE_STORY_QUOTA = 5;
+
+export function getUsageStatusDisplay(usage: MyPageUsageStatus) {
+    const freeStoriesUsed = Math.min(usage.totalStoriesCreated, FREE_STORY_QUOTA);
+    const remainingFreeStories = Math.max(FREE_STORY_QUOTA - freeStoriesUsed, 0);
+
+    return {
+        totalStoriesCreated: usage.totalStoriesCreated,
+        freeStoriesUsed,
+        freeStoryQuota: FREE_STORY_QUOTA,
+        remainingFreeStories,
+        usageProgress: freeStoriesUsed / FREE_STORY_QUOTA,
+        canGenerateFreeStory: usage.canGenerateFreeStory,
+    };
+}
+
+export function formatLanguageProficiencyLine(
+    languageDisplay: string,
+    proficiency: ProficiencyLevel,
+): string {
+    return `${languageDisplay} | ${PROFICIENCY_STAGE_LABEL[proficiency]} 단계`;
+}
+
+export function formatGuardianLanguageLine(profile: MyPageProfile): string {
+    const guardianLang = profile.secondLanguageDisplay;
+    const childLang = profile.firstLanguageDisplay;
+
+    switch (profile.familyStructure) {
+        case "TWO_PARENTS":
+            return `엄마 (${guardianLang}), 아빠 (${childLang})`;
+        case "ONE_PARENT":
+            return `보호자 (${guardianLang})`;
+        case "CUSTOM":
+            return profile.customFamilyStructure?.trim() || guardianLang;
+        case "SECRET":
+            return "가족 구성 비공개";
+        case "EXTENDED_FAMILY":
+        default:
+            return `가족 (${guardianLang})`;
+    }
+}
+
+export function formatStoryPreferenceTag(profile: MyPageProfile): string {
+    if (profile.storyPreference === "CUSTOM") {
+        const custom = profile.customStoryPreference?.trim();
+        if (!custom) return "#맞춤_이야기";
+        return custom.startsWith("#") ? custom : `#${custom.replace(/\s+/g, "_")}`;
+    }
+    return STORY_PREFERENCE_TAG[profile.storyPreference];
+}
+
+export function buildMyPageInfoRows(profile: MyPageProfile) {
+    return [
+        {
+            label: "사용 언어",
+            lines: [
+                formatLanguageProficiencyLine(
+                    profile.firstLanguageDisplay,
+                    profile.firstLanguageProficiency,
+                ),
+                formatLanguageProficiencyLine(
+                    profile.secondLanguageDisplay,
+                    profile.secondLanguageProficiency,
+                ),
+            ],
+            variant: "default" as const,
+        },
+        {
+            label: "보호자 언어",
+            lines: [formatGuardianLanguageLine(profile)],
+            variant: "default" as const,
+        },
+        {
+            label: "듣고 싶은 이야기",
+            lines: [formatStoryPreferenceTag(profile)],
+            variant: "tag" as const,
+        },
+    ];
+}
+
+export function getMyPage() {
+    return apiFetch("/api/users/mypage") as Promise<{ data: MyPageData }>;
+}
