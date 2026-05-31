@@ -1,4 +1,5 @@
 import { apiFetch } from "../lib/api";
+import { getProfileId, setProfileId } from "../lib/auth";
 
 export type UserResponse = {
     userId: number;
@@ -436,6 +437,27 @@ export function buildMyPageInfoRows(profile: MyPageProfile) {
 
 export function getMyPage() {
     return apiFetch("/api/users/mypage") as Promise<{ data: MyPageData }>;
+}
+
+/** localStorage에 없으면 마이페이지 프로필 ID를 조회해 저장합니다. */
+export async function resolveProfileId(): Promise<number | null> {
+    const cached = getProfileId();
+    if (cached != null) {
+        return cached;
+    }
+
+    try {
+        const { data } = await getMyPage();
+        const profileId = data.profiles[0]?.profileId;
+        if (profileId != null) {
+            setProfileId(profileId);
+            return profileId;
+        }
+    } catch {
+        // ignore
+    }
+
+    return null;
 }
 
 export function deleteUser() {

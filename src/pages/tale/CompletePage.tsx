@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import Header from "../../components/Header";
@@ -6,10 +6,16 @@ import YellowButton from "../../components/YellowButton";
 import { getStoryDetail, saveStory } from "../../apis/stories";
 import {
     getStoryInit,
+    languageCodeToFlag,
     languageDisplayToFlag,
     type StoryInitData,
 } from "../../apis/tale";
-import { getProfileId } from "../../lib/auth";
+import { resolveProfileId } from "../../apis/user";
+import {
+    clearTaleGenerationSession,
+    loadTaleGenerationSession,
+    type TaleGenerationSession,
+} from "../../lib/taleGenerationSession";
 import Flower from "../../assets/images/tale/flower.png";
 
 type CompleteLocationState = {
@@ -21,16 +27,42 @@ const CompletePage = () => {
     const location = useLocation();
     const state = location.state as CompleteLocationState | null;
 
+    const [generationSession] = useState<TaleGenerationSession | null>(() =>
+        loadTaleGenerationSession(),
+    );
     const [storyInit, setStoryInit] = useState<StoryInitData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [savedStoryId, setSavedStoryId] = useState<number | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [saveError, setSaveError] = useState<string | null>(null);
 
+    const generatedResult = generationSession?.result;
+
+    const displayTitle = generatedResult?.title ?? storyInit?.recommendedTaleTitle ?? "";
+    const coverImageUrl = useMemo(() => {
+        if (generatedResult?.slides?.length) {
+            const firstSlide = [...generatedResult.slides].sort(
+                (a, b) => a.order - b.order,
+            )[0];
+            return firstSlide?.imageUrl?.trim() || null;
+        }
+        return storyInit?.coverImageUrl ?? null;
+    }, [generatedResult, storyInit?.coverImageUrl]);
+
+    const firstFlag = generatedResult
+        ? languageCodeToFlag(generatedResult.primaryLanguage)
+        : storyInit
+          ? languageDisplayToFlag(storyInit.firstLanguageDisplay)
+          : undefined;
+    const secondFlag = generatedResult
+        ? languageCodeToFlag(generatedResult.secondaryLanguage)
+        : storyInit
+          ? languageDisplayToFlag(storyInit.secondLanguageDisplay)
+          : undefined;
+
     useEffect(() => {
-        const profileId = state?.profileId ?? getProfileId();
-        if (profileId == null) {
-            setError("프로필 정보를 찾을 수 없습니다.");
+        if (generatedResult) {
             setIsLoading(false);
             return;
         }
@@ -38,6 +70,15 @@ const CompletePage = () => {
         let cancelled = false;
 
         (async () => {
+            const profileId = state?.profileId ?? (await resolveProfileId());
+            if (profileId == null) {
+                if (!cancelled) {
+                    setError("프로필 정보를 찾을 수 없습니다.");
+                    setIsLoading(false);
+                }
+                return;
+            }
+
             try {
                 const { data } = await getStoryInit(profileId);
                 if (!cancelled) {
@@ -58,16 +99,73 @@ const CompletePage = () => {
         return () => {
             cancelled = true;
         };
-    }, [state?.profileId]);
+    }, [generatedResult, state?.profileId]);
 
-    const firstFlag = storyInit
-        ? languageDisplayToFlag(storyInit.firstLanguageDisplay)
-        : undefined;
-    const secondFlag = storyInit
-        ? languageDisplayToFlag(storyInit.secondLanguageDisplay)
-        : undefined;
+    const persistGeneratedStory = async (): Promise<number> => {
+        if (savedStoryId != null) {
+            return savedStoryId;
+        }
+
+        if (!generationSession?.result) {
+            throw new Error("생성된 동화 데이터가 없습니다.");
+        }
+
+        const profileId =
+            generationSession.profileId ??
+            state?.profileId ??
+            (await resolveProfileId());
+        if (profileId == null) {
+            throw new Error("프로필 정보를 찾을 수 없습니다.");
+        }
+
+        const slides = [...generationSession.result.slides]
+            .sort((a, b) => a.order - b.order)
+            .map(
+                ({
+                    order,
+                    imageUrl,
+                    textKr,
+                    textNative,
+                    audioUrlKr,
+                    audioUrlNative,
+                }) => ({
+                    order,
+                    imageUrl,
+                    textKr,
+                    textNative,
+                    audioUrlKr,
+                    audioUrlNative,
+                }),
+            );
+
+        const { data } = await saveStory({
+            title: generationSession.result.title,
+            prompt: generationSession.prompt,
+            profileId,
+            slides,
+        });
+
+        setSavedStoryId(data.storyId);
+        return data.storyId;
+    };
 
     const handleSaveToLibrary = async () => {
+        if (generationSession?.result) {
+            setIsSaving(true);
+            setSaveError(null);
+
+            try {
+                await persistGeneratedStory();
+                clearTaleGenerationSession();
+                navigate("/lib");
+            } catch {
+                setSaveError("도서관에 저장하지 못했습니다. 잠시 후 다시 시도해주세요.");
+            } finally {
+                setIsSaving(false);
+            }
+            return;
+        }
+
         if (!storyInit?.storyId) return;
 
         setIsSaving(true);
@@ -109,6 +207,33 @@ const CompletePage = () => {
         }
     };
 
+    const handleReadStory = async () => {
+        if (generationSession?.result) {
+            try {
+                const storyId = await persistGeneratedStory();
+                clearTaleGenerationSession();
+                navigate(`/tale/read/${storyId}`);
+            } catch {
+                setError("이야기를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.");
+            }
+            return;
+        }
+
+        if (storyInit?.storyId != null) {
+            navigate(`/tale/read/${storyInit.storyId}`);
+        }
+    };
+
+    const canRead =
+        !isLoading &&
+        !error &&
+        (generationSession?.result != null || storyInit?.storyId != null);
+
+    const canSave =
+        !isLoading &&
+        !error &&
+        (generationSession?.result != null || storyInit?.storyId != null);
+
     return (
         <Wrapper>
             <Header activeMenu="tale" />
@@ -118,16 +243,14 @@ const CompletePage = () => {
                 <RowContainer>
                     <BookImageContainer>
                         <FlowerImage height={380} src={Flower} alt="" />
-                        {storyInit?.coverImageUrl && (
+                        {coverImageUrl && (
                             <BookImage
                                 height={260}
-                                src={storyInit.coverImageUrl}
-                                alt={storyInit.recommendedTaleTitle ?? ""}
+                                src={coverImageUrl}
+                                alt={displayTitle}
                             />
                         )}
-                        {storyInit?.recommendedTaleTitle && (
-                            <TaleTitle>{storyInit.recommendedTaleTitle}</TaleTitle>
-                        )}
+                        {displayTitle && <TaleTitle>{displayTitle}</TaleTitle>}
                     </BookImageContainer>
                     <ColumnContainer>
                         <FlagContainer>
@@ -136,25 +259,19 @@ const CompletePage = () => {
                             ) : (
                                 <>
                                     {firstFlag ? (
-                                        <Image
-                                            height={96}
-                                            src={firstFlag}
-                                            alt={storyInit?.firstLanguageDisplay ?? ""}
-                                        />
+                                        <Image height={96} src={firstFlag} alt="" />
                                     ) : (
                                         <LanguageLabel>
-                                            {storyInit?.firstLanguageDisplay}
+                                            {generatedResult?.primaryLanguage ??
+                                                storyInit?.firstLanguageDisplay}
                                         </LanguageLabel>
                                     )}
                                     {secondFlag ? (
-                                        <Image
-                                            height={96}
-                                            src={secondFlag}
-                                            alt={storyInit?.secondLanguageDisplay ?? ""}
-                                        />
+                                        <Image height={96} src={secondFlag} alt="" />
                                     ) : (
                                         <LanguageLabel>
-                                            {storyInit?.secondLanguageDisplay}
+                                            {generatedResult?.secondaryLanguage ??
+                                                storyInit?.secondLanguageDisplay}
                                         </LanguageLabel>
                                     )}
                                 </>
@@ -166,12 +283,8 @@ const CompletePage = () => {
                             height={68}
                             fontSize={28}
                             borderRadius={5}
-                            onClick={() => {
-                                if (storyInit?.storyId != null) {
-                                    navigate(`/tale/read/${storyInit.storyId}`);
-                                }
-                            }}
-                            disabled={isLoading || !!error || storyInit?.storyId == null}
+                            onClick={handleReadStory}
+                            disabled={!canRead}
                         >
                             이야기 보러 가기
                         </YellowButton>
@@ -185,12 +298,7 @@ const CompletePage = () => {
                             backgroundColor={"#515050"}
                             color={"#FFDE21"}
                             onClick={handleSaveToLibrary}
-                            disabled={
-                                isLoading ||
-                                isSaving ||
-                                !!error ||
-                                storyInit?.storyId == null
-                            }
+                            disabled={!canSave || isSaving}
                         >
                             {isSaving ? "저장 중..." : "도서관에 넣기"}
                         </YellowButton>

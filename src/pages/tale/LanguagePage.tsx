@@ -1,15 +1,24 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import Header from "../../components/Header";
 import YellowButton from "../../components/YellowButton";
 import { getMyPage } from "../../apis/user";
 import {
+    buildGenerateStoryRequest,
+    generateStory,
+    getStoryInit,
     LANGUAGE_OPTIONS,
     LANGUAGE_UI,
     languageDisplayToFlag,
     type LanguageDisplay,
+    type TaleFlowLocationState,
 } from "../../apis/tale";
+import { setProfileId } from "../../lib/auth";
+import {
+    loadTaleGenerationSession,
+    saveTaleGenerationSession,
+} from "../../lib/taleGenerationSession";
 
 type LanguageSlot = "first" | "second";
 
@@ -26,9 +35,29 @@ function getLanguageUi(language: string) {
 
 const LanguagePage = () => {
     const navigate = useNavigate();
+    const location = useLocation();
+    const flowState = location.state as TaleFlowLocationState | null;
+    const session = loadTaleGenerationSession();
+    const prompt =
+        flowState?.prompt?.trim() ?? session?.prompt?.trim() ?? "";
+
     const [firstLanguage, setFirstLanguage] = useState<LanguageDisplay>("한국어");
     const [secondLanguage, setSecondLanguage] = useState<LanguageDisplay>("영어");
     const [editingSlot, setEditingSlot] = useState<LanguageSlot | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (flowState?.generationError) {
+            setError(flowState.generationError);
+        }
+    }, [flowState?.generationError]);
+
+    useEffect(() => {
+        if (!prompt) {
+            navigate("/tale/prompt", { replace: true });
+        }
+    }, [prompt, navigate]);
 
     useEffect(() => {
         let cancelled = false;
@@ -71,6 +100,48 @@ const LanguagePage = () => {
     const getAvailableOptions = (slot: LanguageSlot) => {
         const excluded = slot === "first" ? secondLanguage : firstLanguage;
         return LANGUAGE_OPTIONS.filter((lang) => lang !== excluded);
+    };
+
+    const handleStartGeneration = async () => {
+        if (!prompt || isSubmitting) return;
+
+        setIsSubmitting(true);
+        setError(null);
+
+        try {
+            const { data: myPage } = await getMyPage();
+            const profile = myPage.profiles[0];
+            if (!profile) {
+                setError("로그인 후 다시 시도해 주세요.");
+                return;
+            }
+
+            setProfileId(profile.profileId);
+
+            const { data: init } = await getStoryInit(profile.profileId);
+            const body = buildGenerateStoryRequest(
+                profile,
+                init,
+                prompt,
+                firstLanguage,
+                secondLanguage,
+            );
+
+            const { data: job } = await generateStory(body);
+
+            saveTaleGenerationSession({
+                jobId: job.jobId,
+                profileId: profile.profileId,
+                prompt,
+                generationStartedAt: Date.now(),
+            });
+
+            navigate("/tale/loading");
+        } catch {
+            setError("동화 생성을 시작하지 못했습니다. 잠시 후 다시 시도해주세요.");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const renderLanguageItem = (
@@ -123,6 +194,10 @@ const LanguagePage = () => {
         );
     };
 
+    if (!prompt) {
+        return null;
+    }
+
     return (
         <Wrapper>
             <Header activeMenu="tale" />
@@ -132,15 +207,17 @@ const LanguagePage = () => {
                     {renderLanguageItem(firstLanguage, "first", setFirstLanguage)}
                     {renderLanguageItem(secondLanguage, "second", setSecondLanguage)}
                 </LanguageContainer>
+                {error && <ErrorText>{error}</ErrorText>}
                 <YellowButton
                     type="button"
                     width={158}
                     height={63}
                     fontSize={30}
                     borderRadius={5}
-                    onClick={() => navigate("/tale/loading")}
+                    onClick={handleStartGeneration}
+                    disabled={isSubmitting}
                 >
-                    좋아요!
+                    {isSubmitting ? "준비 중..." : "좋아요!"}
                 </YellowButton>
             </Container>
         </Wrapper>
@@ -180,6 +257,16 @@ const Title = styled.div`
     font-weight: 800;
     line-height: 45px;
     cursor: default;
+`;
+
+const ErrorText = styled.p`
+    margin: -48px 0 0;
+    color: #F02828;
+    font-size: 18px;
+    font-weight: 600;
+    text-align: center;
+    max-width: 640px;
+    line-height: 1.4;
 `;
 
 const FlagImage = styled.img`
