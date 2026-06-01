@@ -48,3 +48,15 @@ export function getLibraryStories(params: {
     });
     return apiFetch(`/api/library?${query}`) as Promise<LibraryListResponse>;
 }
+
+type LibraryDeleteResponse = {
+    success: boolean;
+    data: Record<string, never>;
+    message: string;
+};
+
+export function deleteLibraryStory(storyId: number) {
+    return apiFetch(`/api/library/${storyId}`, {
+        method: "DELETE",
+    }) as Promise<LibraryDeleteResponse>;
+}

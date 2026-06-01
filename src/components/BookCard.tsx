@@ -18,6 +18,7 @@ export interface BookCardProps {
     secondaryLanguage?: string;
     /* 카드 클릭 시 버튼 : library → [읽기 | 단어장], quiz → [퀴즈 풀기] */
     listVariant?: BookCardListVariant;
+    onDelete?: (storyId: number) => void | Promise<void>;
 }
 
 const BookCard = ({
@@ -28,6 +29,7 @@ const BookCard = ({
     primaryLanguage,
     secondaryLanguage,
     listVariant = "library",
+    onDelete,
 }: BookCardProps) => {
     const primaryFlag = primaryLanguage ? languageCodeToFlag(primaryLanguage) : koreaFlag;
     const secondaryFlag = secondaryLanguage ? languageCodeToFlag(secondaryLanguage) : undefined;
@@ -51,6 +53,13 @@ const BookCard = ({
         e.stopPropagation();
         setCardPopover(false);
         setMorePopover((prev) => !prev);
+    };
+
+    const handleDeleteClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setMorePopover(false);
+        if (storyId == null || !onDelete) return;
+        void onDelete(storyId);
     };
 
     return (
@@ -113,7 +122,12 @@ const BookCard = ({
             {/* [팝오버] 삭제 */}
             {morePopover && (
                 <MorePopover onClick={(e) => e.stopPropagation()}>
-                    <PopoverButton $danger>삭제</PopoverButton>
+                    <PopoverButton
+                        $danger
+                        onClick={onDelete ? handleDeleteClick : undefined}
+                    >
+                        삭제
+                    </PopoverButton>
                 </MorePopover>
             )}
         </Card>
