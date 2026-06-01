@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import styled from "styled-components";
 import Header from "../../components/Header";
@@ -51,12 +51,13 @@ const ReadPage = () => {
                 const { data } = await getStoryDetail(storyId);
                 if (!cancelled) {
                     const sortedSlides = [...data.slides].sort((a, b) => a.order - b.order);
+                    const storySlides = sortedSlides.slice(1);
                     setStory({ ...data, slides: sortedSlides });
                     setError(null);
                     setShowFinishScreen(false);
                     setCurrentSlide(
-                        locationState?.startFromLast && sortedSlides.length > 0
-                            ? sortedSlides.length - 1
+                        locationState?.startFromLast && storySlides.length > 0
+                            ? storySlides.length - 1
                             : 0,
                     );
                 }
@@ -76,10 +77,15 @@ const ReadPage = () => {
         };
     }, [storyId, locationState?.startFromLast]);
 
-    const slides = story?.slides ?? [];
-    const slide = slides[currentSlide];
+    const storySlides = useMemo(() => {
+        if (!story?.slides.length) return [];
+        return [...story.slides].sort((a, b) => a.order - b.order).slice(1);
+    }, [story?.slides]);
+
+    const slide = storySlides[currentSlide];
     const isFirstSlide = currentSlide === 0;
-    const isLastSlide = slides.length > 0 && currentSlide === slides.length - 1;
+    const isLastSlide =
+        storySlides.length > 0 && currentSlide === storySlides.length - 1;
 
     const primaryFlag = story ? languageCodeToFlag(story.primaryLanguage) : undefined;
     const secondaryFlag = story ? languageCodeToFlag(story.secondaryLanguage) : undefined;
@@ -87,7 +93,7 @@ const ReadPage = () => {
     const handleLeftClick = () => {
         if (showFinishScreen) {
             setShowFinishScreen(false);
-            setCurrentSlide(slides.length - 1);
+            setCurrentSlide(storySlides.length - 1);
             return;
         }
         if (isFirstSlide) return;
@@ -120,8 +126,8 @@ const ReadPage = () => {
     const leftDisabled = showFinishScreen ? false : isFirstSlide;
     const rightDisabled = showFinishScreen;
     const pageLabel = showFinishScreen
-        ? `${slides.length} / ${slides.length} 쪽`
-        : `${currentSlide + 1} / ${slides.length} 쪽`;
+        ? `${storySlides.length} / ${storySlides.length} 쪽`
+        : `${currentSlide + 1} / ${storySlides.length} 쪽`;
 
     if (isLoading) {
         return (
@@ -134,7 +140,7 @@ const ReadPage = () => {
         );
     }
 
-    if (error || !story || slides.length === 0) {
+    if (error || !story || storySlides.length === 0) {
         return (
             <Wrapper>
                 <Header activeMenu="tale" />
@@ -392,7 +398,7 @@ const RightSection = styled.div`
     justify-content: center;
     overflow-y: auto;
     min-width: 0;
-    gap: 40px;
+    gap: 80px;
 `;
 
 const Bookmark = styled.img`

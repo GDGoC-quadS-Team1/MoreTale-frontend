@@ -3,26 +3,34 @@ import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import bookCoverEx from "../assets/images/tale/book-cover-ex.png";
 import koreaFlag from "../assets/images/tale/flag/korea.png";
-import japanFlag from "../assets/images/tale/flag/japan.png";
 import wordIcon from "../assets/images/icon/word.svg";
 import moreIcon from "../assets/images/icon/more.svg";
+import { languageCodeToFlag } from "../apis/tale";
 
 export type BookCardListVariant = "library" | "quiz";
 
 export interface BookCardProps {
+    storyId?: number;
     title?: string;
     date?: string;
     coverSrc?: string;
+    primaryLanguage?: string;
+    secondaryLanguage?: string;
     /* 카드 클릭 시 버튼 : library → [읽기 | 단어장], quiz → [퀴즈 풀기] */
     listVariant?: BookCardListVariant;
 }
 
 const BookCard = ({
+    storyId,
     title = "달을 따라 간 소년",
     date = "2026.03.29.",
     coverSrc = bookCoverEx,
+    primaryLanguage,
+    secondaryLanguage,
     listVariant = "library",
 }: BookCardProps) => {
+    const primaryFlag = primaryLanguage ? languageCodeToFlag(primaryLanguage) : koreaFlag;
+    const secondaryFlag = secondaryLanguage ? languageCodeToFlag(secondaryLanguage) : undefined;
     const navigate = useNavigate();
     const [cardPopover, setCardPopover] = useState(false);
     const [morePopover, setMorePopover] = useState(false);
@@ -60,8 +68,8 @@ const BookCard = ({
 
                     {/* 언어 */}
                     <Flags>
-                        <Flag src={koreaFlag} alt="한국어" />
-                        <Flag src={japanFlag} alt="日本語" />
+                        {primaryFlag ? <Flag src={primaryFlag} alt="" /> : null}
+                        {secondaryFlag ? <Flag src={secondaryFlag} alt="" /> : null}
                     </Flags>
 
                     {/* 생성일 & 단어장 */}
@@ -86,7 +94,15 @@ const BookCard = ({
                         <PopoverButton onClick={() => navigate("/quiz/play")}>퀴즈 풀기</PopoverButton>
                     ) : (
                         <>
-                            <PopoverButton onClick={() => navigate("/tale/read")}>읽기</PopoverButton>
+                            <PopoverButton
+                                onClick={() =>
+                                    storyId != null
+                                        ? navigate(`/tale/read/${storyId}`)
+                                        : navigate("/tale/read")
+                                }
+                            >
+                                읽기
+                            </PopoverButton>
                             <PopoverDivider />
                             <PopoverButton onClick={() => navigate("/voca")}>단어장</PopoverButton>
                         </>
@@ -128,10 +144,10 @@ const CardContent = styled.div`
     flex-direction: column;
     flex: 1;
     overflow: hidden;
-    border-radius: 0 0 5px 5px;
 `;
 
 const Cover = styled.img`
+    flex: 1.5;
     width: 100%;
     height: auto;
     object-fit: cover;
@@ -139,21 +155,22 @@ const Cover = styled.img`
 `;
 
 const Body = styled.div`
+    flex: 1;
     padding: 16px 14px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    flex: 1;
+    gap: 8px;
 `;
 
 const TitleRow = styled.div`
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
 `;
 
 const Title = styled.p`
     margin: 0;
+    width: 90%;
     font-size: 16px;
     font-weight: 800;
     color: #424242;
@@ -172,8 +189,8 @@ const MoreButton = styled.button`
 `;
 
 const MoreIcon = styled.img`
-    width: auto;
-    height: 14px;
+    width: 4px;
+    height: auto;
     display: block;
 `;
 
@@ -181,7 +198,6 @@ const Flags = styled.div`
     display: flex;
     align-items: center;
     gap: 2px;
-    margin-bottom: 4px;
 `;
 
 const Flag = styled.img`
@@ -242,8 +258,8 @@ const CardPopover = styled.div`
 
 const MorePopover = styled.div`
     position: absolute;
-    bottom: 48px;
-    right: 12px;
+    bottom: 80px;
+    right: 16px;
     z-index: 10;
     background: #FFFFFF;
     border-radius: 10px;
