@@ -1,12 +1,14 @@
-import type { StoryGenerateResult } from "../apis/tale";
+import type { LanguageDisplay, StoryGenerateResult } from "../apis/tale";
 
 const STORAGE_KEY = "taleGenerationSession";
 
 export type TaleGenerationSession = {
-    jobId: string;
-    profileId: number;
     prompt: string;
+    primaryLanguage: LanguageDisplay;
+    secondaryLanguage: LanguageDisplay;
     generationStartedAt: number;
+    profileId?: number;
+    jobId?: string;
     result?: StoryGenerateResult;
 };
 
@@ -19,7 +21,7 @@ export function loadTaleGenerationSession(): TaleGenerationSession | null {
         const raw = sessionStorage.getItem(STORAGE_KEY);
         if (!raw) return null;
         const parsed = JSON.parse(raw) as TaleGenerationSession;
-        if (!parsed.jobId) {
+        if (!parsed.prompt?.trim()) {
             return null;
         }
         return parsed;

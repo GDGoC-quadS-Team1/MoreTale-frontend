@@ -3,14 +3,21 @@ import { useNavigate } from "react-router-dom";
 import styled, { keyframes } from "styled-components";
 import Header from "../../components/Header";
 import LoadingImage from "../../assets/images/tale/loading.png";
+import { getMyPage } from "../../apis/user";
 import {
+    buildGenerateStoryRequest,
+    generateStory,
     getGenerationJobResult,
     getGenerationJobStatus,
+    getStoryInit,
+    isGenerationJobComplete,
     isGenerationJobFailed,
 } from "../../apis/tale";
+import { setProfileId } from "../../lib/auth";
 import {
     loadTaleGenerationSession,
     saveTaleGenerationSession,
+    type TaleGenerationSession,
 } from "../../lib/taleGenerationSession";
 
 const POLL_INTERVAL_MS = 2500;
@@ -20,16 +27,23 @@ const LoadingPage = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        const session = loadTaleGenerationSession();
-        if (!session?.jobId) {
-            navigate(session?.prompt ? "/tale/language" : "/tale/prompt", {
+        const initialSession = loadTaleGenerationSession();
+        if (!initialSession?.prompt) {
+            navigate("/tale/prompt", { replace: true });
+            return;
+        }
+
+        if (!initialSession.primaryLanguage || !initialSession.secondaryLanguage) {
+            navigate("/tale/language", {
                 replace: true,
-                state: session?.prompt ? { prompt: session.prompt } : undefined,
+                state: { prompt: initialSession.prompt },
             });
             return;
         }
 
         let cancelled = false;
+        let session: TaleGenerationSession = initialSession;
+        const generationStartedAt = session.generationStartedAt;
 
         const goToLanguageWithError = (message: string) => {
             navigate("/tale/language", {
@@ -41,13 +55,47 @@ const LoadingPage = () => {
             });
         };
 
-        const poll = async () => {
+        const ensureJobStarted = async (): Promise<string | null> => {
+            if (session.jobId) {
+                return session.jobId;
+            }
+
+            const { data: myPage } = await getMyPage();
+            const profile = myPage.profiles[0];
+            if (!profile) {
+                goToLanguageWithError("로그인 후 다시 시도해 주세요.");
+                return null;
+            }
+
+            setProfileId(profile.profileId);
+
+            const { data: init } = await getStoryInit(profile.profileId);
+            const body = buildGenerateStoryRequest(
+                profile,
+                init,
+                session.prompt,
+                session.primaryLanguage,
+                session.secondaryLanguage,
+            );
+
+            const { data: job } = await generateStory(body);
+
+            session = {
+                ...session,
+                jobId: job.jobId,
+                profileId: profile.profileId,
+            };
+            saveTaleGenerationSession(session);
+            return job.jobId;
+        };
+
+        const poll = async (jobId: string) => {
             if (cancelled) return;
 
             try {
-                const { data: job } = await getGenerationJobStatus(session.jobId);
+                const { data: job } = await getGenerationJobStatus(jobId);
+                const elapsed = Date.now() - generationStartedAt;
 
-                const elapsed = Date.now() - session.generationStartedAt;
                 if (
                     isGenerationJobFailed(job.status) &&
                     elapsed >= MIN_POLL_MS_BEFORE_FAIL_REDIRECT
@@ -58,11 +106,11 @@ const LoadingPage = () => {
                     return;
                 }
 
-                const resultResponse = await getGenerationJobResult(session.jobId);
-                if (resultResponse?.data?.slides?.length) {
+                const result = await getGenerationJobResult(jobId);
+                if (result?.slides.length) {
                     saveTaleGenerationSession({
                         ...session,
-                        result: resultResponse.data,
+                        result,
                     });
                     navigate("/tale/complete", {
                         state: { profileId: session.profileId },
@@ -70,16 +118,38 @@ const LoadingPage = () => {
                     });
                     return;
                 }
+
+                if (
+                    isGenerationJobComplete(job.status) &&
+                    elapsed >= MIN_POLL_MS_BEFORE_FAIL_REDIRECT
+                ) {
+                    goToLanguageWithError(
+                        "동화 결과를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.",
+                    );
+                    return;
+                }
             } catch {
                 // 작업 완료 전까지 폴링 유지
             }
 
             if (!cancelled) {
-                window.setTimeout(poll, POLL_INTERVAL_MS);
+                window.setTimeout(() => poll(jobId), POLL_INTERVAL_MS);
             }
         };
 
-        poll();
+        (async () => {
+            try {
+                const jobId = await ensureJobStarted();
+                if (!jobId || cancelled) return;
+                await poll(jobId);
+            } catch {
+                if (!cancelled) {
+                    goToLanguageWithError(
+                        "동화 생성을 시작하지 못했습니다. 잠시 후 다시 시도해주세요.",
+                    );
+                }
+            }
+        })();
 
         return () => {
             cancelled = true;

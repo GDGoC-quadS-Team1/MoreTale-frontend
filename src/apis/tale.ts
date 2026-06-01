@@ -229,6 +229,56 @@ function parseGenerationJob(payload: unknown): StoryGenerationJob {
     };
 }
 
+function normalizeGeneratedSlide(
+    item: unknown,
+    fallbackOrder: number,
+): GeneratedSlide | null {
+    if (!item || typeof item !== "object") {
+        return null;
+    }
+
+    const slide = item as Record<string, unknown>;
+    return {
+        order:
+            typeof slide.order === "number" ? slide.order : fallbackOrder,
+        imageUrl: String(slide.imageUrl ?? ""),
+        textKr: String(slide.textKr ?? ""),
+        textNative: String(slide.textNative ?? ""),
+        audioUrlKr: String(slide.audioUrlKr ?? ""),
+        audioUrlNative: String(slide.audioUrlNative ?? ""),
+    };
+}
+
+function parseGenerationResult(payload: unknown): StoryGenerateResult | null {
+    if (!payload || typeof payload !== "object") {
+        return null;
+    }
+
+    const record = payload as Record<string, unknown>;
+    const data = (record.data ?? record) as Record<string, unknown>;
+    const slidesRaw = data.slides;
+
+    if (!Array.isArray(slidesRaw) || slidesRaw.length === 0) {
+        return null;
+    }
+
+    const slides = slidesRaw
+        .map((item, index) => normalizeGeneratedSlide(item, index))
+        .filter((slide): slide is GeneratedSlide => slide != null);
+
+    if (slides.length === 0) {
+        return null;
+    }
+
+    return {
+        title: String(data.title ?? ""),
+        childName: String(data.childName ?? ""),
+        primaryLanguage: String(data.primaryLanguage ?? ""),
+        secondaryLanguage: String(data.secondaryLanguage ?? ""),
+        slides,
+    };
+}
+
 function languageSkillsForDisplay(
     profile: MyPageProfile,
     display: LanguageDisplay,
@@ -312,13 +362,19 @@ export async function generateStory(body: GenerateStoryRequest) {
     };
 }
 
-export function getGenerationJobStatus(jobId: string) {
-    return apiFetch(
+export async function getGenerationJobStatus(jobId: string) {
+    const raw = await apiFetch(
         `/api/stories/generation-jobs/${encodeURIComponent(jobId)}`,
-    ) as Promise<ApiResponse<StoryGenerationJob>>;
+    );
+    return {
+        success: true,
+        data: parseGenerationJob(raw),
+    } as ApiResponse<StoryGenerationJob>;
 }
 
-export async function getGenerationJobResult(jobId: string) {
+export async function getGenerationJobResult(
+    jobId: string,
+): Promise<StoryGenerateResult | null> {
     const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
     const headers = new Headers();
     const token = getAccessToken();
@@ -341,7 +397,8 @@ export async function getGenerationJobResult(jobId: string) {
         );
     }
 
-    return response.json() as Promise<ApiResponse<StoryGenerateResult>>;
+    const parsed = await response.json();
+    return parseGenerationResult(parsed);
 }
 
 export async function pollGenerationJob(
@@ -359,9 +416,9 @@ export async function pollGenerationJob(
         }
 
         if (isGenerationJobComplete(job.status)) {
-            const resultResponse = await getGenerationJobResult(jobId);
-            if (resultResponse?.data?.slides?.length) {
-                return resultResponse.data;
+            const result = await getGenerationJobResult(jobId);
+            if (result?.slides.length) {
+                return result;
             }
         }
 
