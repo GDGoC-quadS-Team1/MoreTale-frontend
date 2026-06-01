@@ -250,7 +250,7 @@ const CompletePage = () => {
                                 alt={displayTitle}
                             />
                         )}
-                        {displayTitle && <TaleTitle>{displayTitle}</TaleTitle>}
+                        {/* {displayTitle && <TaleTitle>{displayTitle}</TaleTitle>} */}
                     </BookImageContainer>
                     <ColumnContainer>
                         <FlagContainer>
@@ -370,7 +370,7 @@ const Image = styled.img`
 
 const BookImageContainer = styled.div`
     position: relative;
-    width: 540px;
+    width: 500px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -387,25 +387,25 @@ const BookImage = styled(Image)`
     box-shadow: 0 4px 4px 0 rgba(0, 0, 0, 0.25);
 `;
 
-const TaleTitle = styled.p`
-    position: absolute;
-    z-index: 2;
-    margin: 120px 0 0;
-    max-width: 280px;
-    color: #1F1F1F;
-    font-size: 22px;
-    font-weight: 800;
-    text-align: center;
-    line-height: 1.3;
-    pointer-events: none;
-`;
+// const TaleTitle = styled.p`
+//     position: absolute;
+//     z-index: 2;
+//     margin: 120px 0 0;
+//     max-width: 280px;
+//     color: #1F1F1F;
+//     font-size: 22px;
+//     font-weight: 800;
+//     text-align: center;
+//     line-height: 1.3;
+//     pointer-events: none;
+// `;
 
 const RowContainer = styled.div`
     display: flex;
     flex-direction: row;
     align-items: flex-start;
     justify-content: center;
-    gap: 150px;
+    gap: 100px;
 `;
 
 const ColumnContainer = styled.div`
@@ -423,8 +423,8 @@ const FlagContainer = styled.div`
     justify-content: center;
     gap: 33px;
     margin-bottom: 20px;
-    padding-top: 16px;
     min-height: 96px;
+    padding-top: 10px;
 `;
 
 const FlagPlaceholder = styled.div`

@@ -271,12 +271,14 @@ const Wrapper = styled.div`
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
+    overflow: hidden;
 `;
 
 const Container = styled.div`
     background: #F2F2F2;
     width: 100%;
     flex: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -297,7 +299,7 @@ const StatusText = styled.p`
 const LeftContainer = styled.div`
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 16px;
 `;
 
 const RightContainer = styled.div`
@@ -348,13 +350,14 @@ const Icon = styled.img`
 
 const InfoContainer = styled.div`
     width: 100%;
-    flex: 1;
+    flex-shrink: 0;
     display: flex;
     flex-direction: row;
     align-items: center;
     justify-content: flex-start;
     align-self: flex-start;
     z-index: 1;
+    margin-bottom: 20px;
 `;
 
 const BookContainer = styled.div`
@@ -375,18 +378,21 @@ const BookContainer = styled.div`
 const LeftSection = styled.div`
     flex: 1;
     display: flex;
-    align-items: flex-start;
-    justify-content: flex-start;
-    padding: 24px 0 24px 30px;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 0 24px 32px;
 `;
 
 const RightSection = styled.div`
-    flex: 1.01;
-    padding: 20px 80px 20px 50px;
+    flex: 1.5;
+    padding: 24px 60px;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 50px;
+    justify-content: center;
+    overflow-y: auto;
+    min-width: 0;
+    gap: 40px;
 `;
 
 const Bookmark = styled.img`
