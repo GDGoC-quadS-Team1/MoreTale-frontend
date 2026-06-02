@@ -6,10 +6,16 @@ import PencilIcon from "../../assets/images/tale/pencil.svg";
 import ArrowLeftIcon from "../../assets/images/tale/arrow-left.svg";
 import ArrowRightIcon from "../../assets/images/tale/arrow-right.svg";
 import QuizScoreImg from "../../assets/images/quiz-score.png";
-import { getQuizByStoryId, type QuizQuestionDto } from "../../apis/quiz";
+import {
+    getQuizByStoryId,
+    submitQuiz,
+    type QuizQuestionDto,
+    type QuizSubmitData,
+} from "../../apis/quiz";
 
 type QuizOption = {
     label: string;
+    value: string;
 };
 
 type QuizQuestion = {
@@ -31,16 +37,16 @@ const OPTION_SELECTED = "#FEE762";
 function mapQuizQuestions(questions: QuizQuestionDto[]): QuizQuestion[] {
     return questions.map((q) => {
         if (q.questionType === "TRUE_FALSE") {
-            const normalizedAnswer = q.correctAnswer.trim().toUpperCase();
-            const correctIndex = normalizedAnswer === "TRUE" ? 0 : normalizedAnswer === "FALSE" ? 1 : -1;
-
             return {
                 questionId: q.questionId,
                 questionType: q.questionType,
                 prompt: q.questionText,
                 points: 10,
-                options: [{ label: "" }, { label: "" }],
-                correctIndex,
+                options: [
+                    { label: "", value: "TRUE" },
+                    { label: "", value: "FALSE" },
+                ],
+                correctIndex: -1,
             };
         }
 
@@ -58,7 +64,10 @@ function mapQuizQuestions(questions: QuizQuestionDto[]): QuizQuestion[] {
             questionType: q.questionType,
             prompt: q.questionText,
             points: 10,
-            options: sortedOptions.map((opt) => ({ label: opt.optionText })),
+            options: sortedOptions.map((opt) => ({
+                label: opt.optionText,
+                value: String(opt.optionOrder),
+            })),
             correctIndex: correctIndex >= 0 ? correctIndex : -1,
         };
     });
@@ -80,6 +89,7 @@ const QuizPlayPage = () => {
     const [bookTitle] = useState(
         (location.state as { title?: string } | null)?.title ?? BOOK_TITLE,
     );
+    const [quizId, setQuizId] = useState<number | null>(null);
     const [questions, setQuestions] = useState<QuizQuestion[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -90,6 +100,9 @@ const QuizPlayPage = () => {
     const [submitted, setSubmitted] = useState(false);
     const [showResultScreen, setShowResultScreen] = useState(false);
     const [reviewMode, setReviewMode] = useState(false);
+    const [submitResult, setSubmitResult] = useState<QuizSubmitData | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState<string | null>(null);
 
     useEffect(() => {
         if (total === 0) {
@@ -101,6 +114,9 @@ const QuizPlayPage = () => {
         setSubmitted(false);
         setShowResultScreen(false);
         setReviewMode(false);
+        setSubmitResult(null);
+        setIsSubmitting(false);
+        setSubmitError(null);
     }, [total]);
 
     useEffect(() => {
@@ -115,8 +131,8 @@ const QuizPlayPage = () => {
                 setLoading(true);
                 setError(null);
                 const { data } = await getQuizByStoryId(storyId);
+                setQuizId(data.quizId);
                 setQuestions(mapQuizQuestions(data.questions));
-                console.log(data);
             } catch {
                 setError("퀴즈를 불러오지 못했습니다.");
             } finally {
@@ -129,18 +145,31 @@ const QuizPlayPage = () => {
 
     const allAnswered = useMemo(() => selections.every((s) => s !== null), [selections]);
 
+    const answerResultMap = useMemo(() => {
+        return new Map(submitResult?.answerResults.map((result) => [result.questionId, result]) ?? []);
+    }, [submitResult]);
+
     const correctness = useMemo(() => {
-        return selections.map((choice, i) =>
-            choice === null ? null : choice === questions[i]?.correctIndex,
-        );
-    }, [selections, questions]);
+        if (!submitted) {
+            return Array.from({ length: total }, () => null);
+        }
+        return questions.map((question) => {
+            const result = answerResultMap.get(question.questionId);
+            return typeof result?.isCorrect === "boolean" ? result.isCorrect : null;
+        });
+    }, [submitted, total, questions, answerResultMap]);
 
     const totalScore = useMemo(() => {
-        return questions.reduce((sum, q, i) => {
-            if (correctness[i]) return sum + q.points;
-            return sum;
-        }, 0);
-    }, [correctness, questions]);
+        return submitResult?.score ?? 0;
+    }, [submitResult]);
+
+    const getCorrectIndex = (slideIdx: number): number => {
+        const question = questions[slideIdx];
+        if (!question) return -1;
+        const result = answerResultMap.get(question.questionId);
+        if (!result?.correctAnswer) return -1;
+        return question.options.findIndex((option) => option.value === result.correctAnswer);
+    };
 
     const getOptionBackground = (slideIdx: number, idx: number): string => {
         const chosen = selections[slideIdx] === idx;
@@ -148,7 +177,7 @@ const QuizPlayPage = () => {
             return chosen ? OPTION_SELECTED : OPTION_DEFAULT;
         }
         const sel = selections[slideIdx];
-        const cor = questions[slideIdx].correctIndex;
+        const cor = getCorrectIndex(slideIdx);
         if (sel === null) return OPTION_DEFAULT;
         const gotRight = sel === cor;
         if (gotRight) {
@@ -160,12 +189,47 @@ const QuizPlayPage = () => {
     };
 
     const selectOption = (optionIndex: number) => {
-        if (submitted) return;
+        if (submitted || isSubmitting) return;
         setSelections((prev) => {
             const next = [...prev];
             next[currentIndex] = optionIndex;
             return next;
         });
+    };
+
+    const submitAnswers = async () => {
+        if (quizId == null) {
+            setSubmitError("퀴즈 ID를 찾지 못해 제출할 수 없습니다.");
+            return;
+        }
+
+        try {
+            setIsSubmitting(true);
+            setSubmitError(null);
+
+            const answers = questions.map((question, questionIndex) => {
+                const selectedIndex = selections[questionIndex];
+                const selectedOption = selectedIndex != null ? question.options[selectedIndex] : null;
+                return {
+                    questionId: question.questionId,
+                    submittedAnswer: selectedOption?.value ?? "",
+                };
+            });
+
+            const { data } = await submitQuiz({
+                quizId,
+                answers,
+            });
+
+            setSubmitResult(data);
+            setSubmitted(true);
+            setShowResultScreen(true);
+            setReviewMode(false);
+        } catch {
+            setSubmitError("퀴즈 제출에 실패했습니다. 잠시 후 다시 시도해주세요.");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const isFirstSlide = currentIndex === 0;
@@ -182,11 +246,10 @@ const QuizPlayPage = () => {
     };
 
     const handleRightClick = () => {
-        if (showResultScreen) return;
+        if (showResultScreen || isSubmitting) return;
         if (isLastSlide) {
             if (allAnswered) {
-                setSubmitted(true);
-                setShowResultScreen(true);
+                void submitAnswers();
             }
             return;
         }
@@ -208,7 +271,7 @@ const QuizPlayPage = () => {
     });
 
     const leftDisabled = showResultScreen ? false : isFirstSlide;
-    const rightDisabled = showResultScreen ? true : isLastSlide ? !allAnswered : false;
+    const rightDisabled = showResultScreen ? true : isLastSlide ? !allAnswered || isSubmitting : false;
 
     return (
         <Wrapper>
@@ -262,7 +325,7 @@ const QuizPlayPage = () => {
                                 <ResultText>
                                     &lt;{bookTitle}&gt; 퀴즈를 모두 풀었어요!
                                     <br />
-                                    틀린 문제를 다시 보거나, 다른 퀴즈에 도전해보세요
+                                    문제를 다시 보거나, 다른 퀴즈에 도전해보세요
                                 </ResultText>
                                 <ScoreContainer>
                                     <ScoreBackgroundImg src={QuizScoreImg} alt="" />
@@ -270,12 +333,13 @@ const QuizPlayPage = () => {
                                 </ScoreContainer>
                                 <ResultButtonRow>
                                     <YellowButton onClick={handleWrongReviewClick}>
-                                        오답 보기
+                                        다시 보기
                                     </YellowButton>
                                     <YellowButton onClick={() => navigate("/quiz")}>
                                         퀴즈 홈으로
                                     </YellowButton>
                                 </ResultButtonRow>
+                                {submitError && <SubmitErrorText>{submitError}</SubmitErrorText>}
                             </ResultBody>
                         </ResultViewport>
                     ) : (
@@ -301,7 +365,7 @@ const QuizPlayPage = () => {
                                                                     if (slideIdx !== currentIndex) return;
                                                                     selectOption(idx);
                                                                 }}
-                                                                disabled={submitted}
+                                                                disabled={submitted || isSubmitting}
                                                                 aria-pressed={chosen}
                                                             >
                                                                 <TrueFalseBadge>{idx === 0 ? "O" : "X"}</TrueFalseBadge>
@@ -324,7 +388,7 @@ const QuizPlayPage = () => {
                                                                     if (slideIdx !== currentIndex) return;
                                                                     selectOption(idx);
                                                                 }}
-                                                                disabled={submitted}
+                                                                disabled={submitted || isSubmitting}
                                                                 aria-pressed={chosen}
                                                             >
                                                                 <OptionText>{opt.label}</OptionText>
@@ -673,6 +737,13 @@ const StatusMessage = styled.div`
     color: #424242;
     font-size: 24px;
     font-weight: 700;
+`;
+
+const SubmitErrorText = styled.div`
+    color: #D14343;
+    font-size: 20px;
+    font-weight: 700;
+    text-align: center;
 `;
 
 const YellowButton = styled.button`
