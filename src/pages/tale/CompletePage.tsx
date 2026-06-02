@@ -424,7 +424,6 @@ const FlagContainer = styled.div`
     gap: 33px;
     margin-bottom: 20px;
     min-height: 96px;
-    padding-top: 10px;
 `;
 
 const FlagPlaceholder = styled.div`

@@ -42,6 +42,10 @@ const ReadPage = () => {
 
     const audioPrimaryRef = useRef<HTMLAudioElement | null>(null);
     const audioSecondaryRef = useRef<HTMLAudioElement | null>(null);
+    const wordPopoverCloseTimerRef = useRef<number | null>(null);
+    const wordAudioRef = useRef<HTMLAudioElement | null>(null);
+    const [openTokenId, setOpenTokenId] = useState<number | null>(null);
+    const [bookmarkedTokenIds, setBookmarkedTokenIds] = useState<number[]>([]);
 
     useEffect(() => {
         if (storyId == null || Number.isNaN(storyId)) {
@@ -69,6 +73,7 @@ const ReadPage = () => {
                             : 0,
                     );
                 }
+                console.log(data);
             } catch {
                 if (!cancelled) {
                     setError("동화를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.");
@@ -150,6 +155,64 @@ const ReadPage = () => {
             audioSecondaryRef.current.play();
         }
     };
+
+    const clearWordPopoverCloseTimer = () => {
+        if (wordPopoverCloseTimerRef.current != null) {
+            window.clearTimeout(wordPopoverCloseTimerRef.current);
+            wordPopoverCloseTimerRef.current = null;
+        }
+    };
+
+    const handleWordMouseEnter = (tokenId: number) => {
+        clearWordPopoverCloseTimer();
+        setOpenTokenId(tokenId);
+    };
+
+    const handleWordMouseLeave = () => {
+        clearWordPopoverCloseTimer();
+        wordPopoverCloseTimerRef.current = window.setTimeout(() => {
+            setOpenTokenId(null);
+            wordPopoverCloseTimerRef.current = null;
+        }, 140);
+    };
+
+    const handleTokenAudioPlay = (audioUrl: string) => {
+        if (!audioUrl) return;
+
+        if (wordAudioRef.current) {
+            wordAudioRef.current.pause();
+            wordAudioRef.current.currentTime = 0;
+        }
+
+        const audio = new Audio(audioUrl);
+        wordAudioRef.current = audio;
+        void audio.play();
+    };
+
+    const toggleTokenBookmark = (tokenId: number) => {
+        setBookmarkedTokenIds((prev) =>
+            prev.includes(tokenId)
+                ? prev.filter((id) => id !== tokenId)
+                : [...prev, tokenId],
+        );
+    };
+
+    useEffect(() => {
+        setOpenTokenId(null);
+        setBookmarkedTokenIds([]);
+        clearWordPopoverCloseTimer();
+    }, [slide?.slideId]);
+
+    useEffect(
+        () => () => {
+            clearWordPopoverCloseTimer();
+            if (wordAudioRef.current) {
+                wordAudioRef.current.pause();
+                wordAudioRef.current = null;
+            }
+        },
+        [],
+    );
 
     const leftDisabled = showFinishScreen ? false : isFirstSlide;
     const rightDisabled = showFinishScreen;
@@ -279,7 +342,65 @@ const ReadPage = () => {
                                             <FlagPlaceholder>{story.secondaryLanguage}</FlagPlaceholder>
                                         )}
                                         <Lang>
-                                            <LangText>{slide.textNative}</LangText>
+                                            <LangText>
+                                                {slide.tokens.length > 0
+                                                    ? slide.tokens.map((token, index) => (
+                                                        token.highlight ? (
+                                                            <WordWrapper
+                                                                key={token.id}
+                                                                onMouseEnter={() => handleWordMouseEnter(token.id)}
+                                                                onMouseLeave={handleWordMouseLeave}
+                                                            >
+                                                                <WordHighlight>{token.text}</WordHighlight>
+                                                                {index < slide.tokens.length - 1 ? " " : ""}
+                                                                {openTokenId === token.id && (
+                                                                    <WordPopover>
+                                                                        <PopoverWord>{token.text}</PopoverWord>
+                                                                        <PopoverMeta>
+                                                                            번역: {token.translation}
+                                                                        </PopoverMeta>
+                                                                        <PopoverDefinition>
+                                                                            {token.definition}
+                                                                        </PopoverDefinition>
+                                                                        <PopoverActions>
+                                                                            <PopoverIconButton
+                                                                                type="button"
+                                                                                onClick={() =>
+                                                                                    handleTokenAudioPlay(
+                                                                                        token.audioUrl,
+                                                                                    )
+                                                                                }
+                                                                            >
+                                                                                <Image
+                                                                                    height={18}
+                                                                                    src={SpeakerIcon}
+                                                                                    alt=""
+                                                                                />
+                                                                            </PopoverIconButton>
+                                                                            <PopoverBookmarkButton
+                                                                                type="button"
+                                                                                $active={bookmarkedTokenIds.includes(
+                                                                                    token.id,
+                                                                                )}
+                                                                                onClick={() =>
+                                                                                    toggleTokenBookmark(token.id)
+                                                                                }
+                                                                            >
+                                                                                단어 저장
+                                                                            </PopoverBookmarkButton>
+                                                                        </PopoverActions>
+                                                                    </WordPopover>
+                                                                )}
+                                                            </WordWrapper>
+                                                        ) : (
+                                                            <span key={token.id}>
+                                                                {token.text}
+                                                                {index < slide.tokens.length - 1 ? " " : ""}
+                                                            </span>
+                                                        )
+                                                    ))
+                                                    : slide.textNative}
+                                            </LangText>
                                             <SpeakerButton type="button" aria-label="" onClick={playSecondary}>
                                                 <Image height={36} src={SpeakerIcon} alt="" />
                                             </SpeakerButton>
@@ -586,4 +707,90 @@ const SpeakerButton = styled.button`
     display: flex;
     align-items: center;
     justify-content: center;
+`;
+
+const WordWrapper = styled.span`
+    position: relative;
+    display: inline-block;
+`;
+
+const WordHighlight = styled.span`
+    transition: background-color 0.15s ease-in-out;
+    border-radius: 6px;
+    padding: 0 2px;
+    cursor: pointer;
+
+    &:hover {
+        background: #FFF2A6;
+    }
+`;
+
+const WordPopover = styled.div`
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    min-width: 200px;
+    padding: 16px;
+    border-radius: 12px;
+    background: #FFFFFF;
+    border: 1px solid #DFDFDF;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+    z-index: 999;
+`;
+
+const PopoverWord = styled.p`
+    margin: 0;
+    font-size: 18px;
+    font-weight: 800;
+    line-height: 1.5;
+    margin-bottom: 12px;
+`;
+
+const PopoverMeta = styled.p`
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #202020;
+    line-height: 1.2;
+    margin-bottom: 12px;
+`;
+
+const PopoverDefinition = styled.p`
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #505050;
+    line-height: 1.2;
+    margin-bottom: 20px;
+`;
+
+const PopoverActions = styled.div`
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+`;
+
+const PopoverIconButton = styled.button`
+    width: 34px;
+    height: 34px;
+    border: none;
+    border-radius: 50%;
+    background: #EFEFEF;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+`;
+
+const PopoverBookmarkButton = styled.button<{ $active: boolean }>`
+    border: none;
+    border-radius: 8px;
+    background: ${props => (props.$active ? "#FFDE21" : "#EFEFEF")};
+    color: #1F1F1F;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 8px 10px;
+    cursor: pointer;
 `;
