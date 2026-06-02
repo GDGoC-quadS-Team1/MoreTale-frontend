@@ -1,10 +1,15 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import Header from "../../components/Header";
 import BookCard from "../../components/BookCard";
 import ListSearchIcon from "../../assets/images/icon/list-search.svg";
+import {
+    getLibraryStories,
+    type LibrarySortKey,
+    type LibraryStoryItem,
+} from "../../apis/library";
 
-const DEMO_CARD_COUNT = 8;
+const PAGE_SIZE = 10; // 한 페이지당 동화 수
 
 const SORT_OPTIONS = [
     { value: "created-desc", label: "최신순" },
@@ -12,14 +17,60 @@ const SORT_OPTIONS = [
     { value: "title-asc", label: "가나다순" },
 ] as const;
 
-type SortValue = (typeof SORT_OPTIONS)[number]["value"];
+function formatCreatedAt(iso: string): string {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "";
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}.${m}.${day}.`;
+}
 
 const QuizListPage = () => {
     const [sortOpen, setSortOpen] = useState(false);
-    const [sortValue, setSortValue] = useState<SortValue>("created-desc");
+    const [sortValue, setSortValue] = useState<LibrarySortKey>("created-desc");
+    const [stories, setStories] = useState<LibraryStoryItem[]>([]);
+    const [page, setPage] = useState(0);
+    const [hasMore, setHasMore] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const sortRootRef = useRef<HTMLDivElement>(null);
 
     const selectedLabel = SORT_OPTIONS.find((o) => o.value === sortValue)?.label ?? "최신순";
+
+    const fetchPage = useCallback(
+        async (pageToLoad: number, sort: LibrarySortKey, append: boolean) => {
+            if (append) {
+                setLoadingMore(true);
+            } else {
+                setLoading(true);
+                setError(null);
+            }
+
+            try {
+                const { data } = await getLibraryStories({
+                    page: pageToLoad,
+                    size: PAGE_SIZE,
+                    sort,
+                });
+                setStories((prev) => (append ? [...prev, ...data.content] : data.content));
+                setPage(data.number);
+                setHasMore(!data.last);
+            } catch {
+                setError("동화 목록을 불러오지 못했습니다.");
+                if (!append) setStories([]);
+            } finally {
+                setLoading(false);
+                setLoadingMore(false);
+            }
+        },
+        [],
+    );
+
+    useEffect(() => {
+        void fetchPage(0, sortValue, false);
+    }, [sortValue, fetchPage]);
 
     useEffect(() => {
         if (!sortOpen) return;
@@ -31,6 +82,11 @@ const QuizListPage = () => {
         document.addEventListener("mousedown", close);
         return () => document.removeEventListener("mousedown", close);
     }, [sortOpen]);
+
+    const handleLoadMore = () => {
+        if (loading || loadingMore || !hasMore) return;
+        void fetchPage(page + 1, sortValue, true);
+    };
 
     return (
         <Wrapper>
@@ -72,11 +128,39 @@ const QuizListPage = () => {
                             <FilterIconImg src={ListSearchIcon} alt="" />
                         </FilterIcon>
                     </SortContainer>
-                    <BookGrid>
-                        {Array.from({ length: DEMO_CARD_COUNT }).map((_, index) => (
-                            <BookCard key={index} listVariant="quiz" />
-                        ))}
-                    </BookGrid>
+                    {loading ? (
+                        <StatusMessage>불러오는 중...</StatusMessage>
+                    ) : error ? (
+                        <StatusMessage>{error}</StatusMessage>
+                    ) : stories.length === 0 ? (
+                        <StatusMessage>저장된 동화가 없습니다.</StatusMessage>
+                    ) : (
+                        <>
+                            <BookGrid>
+                                {stories.map((story) => (
+                                    <BookCard
+                                        key={story.storyId}
+                                        storyId={story.storyId}
+                                        title={story.title}
+                                        date={formatCreatedAt(story.createdAt)}
+                                        coverSrc={story.thumbnail}
+                                        primaryLanguage={story.primaryLanguage}
+                                        secondaryLanguage={story.secondaryLanguage}
+                                        listVariant="quiz"
+                                    />
+                                ))}
+                            </BookGrid>
+                            {hasMore ? (
+                                <LoadMoreButton
+                                    type="button"
+                                    onClick={handleLoadMore}
+                                    disabled={loadingMore}
+                                >
+                                    {loadingMore ? "불러오는 중..." : "더 보기"}
+                                </LoadMoreButton>
+                            ) : null}
+                        </>
+                    )}
                 </Content>
             </Container>
         </Wrapper>
@@ -222,4 +306,33 @@ const BookGrid = styled.div`
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     gap: 60px 70px;
+`;
+
+const StatusMessage = styled.p`
+    margin: 0;
+    text-align: center;
+    color: #757575;
+    font-size: 16px;
+    font-weight: 600;
+`;
+
+const LoadMoreButton = styled.button`
+    align-self: center;
+    padding: 10px 24px;
+    border: 1px solid #424242;
+    border-radius: 5px;
+    background: #ffffff;
+    color: #424242;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    &:hover:not(:disabled) {
+        background: #fafafa;
+    }
 `;
