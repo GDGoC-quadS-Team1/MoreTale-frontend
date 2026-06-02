@@ -336,11 +336,11 @@ const STORY_PREFERENCE_TAG: Record<Exclude<StoryPreference, "CUSTOM">, string> =
 /** 무료 동화 1회 생성에 필요한 꿀단지 수 */
 export const HONEY_JARS_PER_STORY = 10;
 
-/** 무료 생성까지 모은 꿀단지 수 (UI 진행률용) */
+/** 꿀단지 현황 */
 export function getHoneyProgressCollected(usage: MyPageUsageStatus): number {
     return Math.min(
         HONEY_JARS_PER_STORY,
-        Math.max(0, HONEY_JARS_PER_STORY - usage.remainingHoneyJarForFree),
+        Math.max(0, usage.honeyJarCount),
     );
 }
 
@@ -354,7 +354,7 @@ export function getHoneyWarehouseDisplay(usage: MyPageUsageStatus) {
     };
 }
 
-/** 가입 시 제공되는 무료 동화 생성 횟수 (꿀 창고와 별개) */
+/** 무료 동화 생성 횟수 */
 export const FREE_STORY_QUOTA = 5;
 
 export function getUsageStatusDisplay(usage: MyPageUsageStatus) {
@@ -439,7 +439,7 @@ export function getMyPage() {
     return apiFetch("/api/users/mypage") as Promise<{ data: MyPageData }>;
 }
 
-/** localStorage에 없으면 마이페이지 프로필 ID를 조회해 저장합니다. */
+/** localStorage에 없으면 마이페이지 프로필 ID를 조회 */
 export async function resolveProfileId(): Promise<number | null> {
     const cached = getProfileId();
     if (cached != null) {
