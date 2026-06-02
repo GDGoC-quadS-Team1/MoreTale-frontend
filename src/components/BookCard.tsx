@@ -100,7 +100,17 @@ const BookCard = ({
             {cardPopover && (
                 <CardPopover onClick={(e) => e.stopPropagation()}>
                     {listVariant === "quiz" ? (
-                        <PopoverButton onClick={() => navigate("/quiz/play")}>퀴즈 풀기</PopoverButton>
+                        <PopoverButton
+                            onClick={() =>
+                                storyId != null
+                                    ? navigate(`/quiz/play?storyId=${storyId}`, {
+                                        state: { storyId, title },
+                                    })
+                                    : navigate("/quiz/play")
+                            }
+                        >
+                            퀴즈 풀기
+                        </PopoverButton>
                     ) : (
                         <>
                             <PopoverButton

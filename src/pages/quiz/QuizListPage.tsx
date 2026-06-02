@@ -146,7 +146,7 @@ const QuizListPage = () => {
                         </FilterIcon>
                     </SortContainer>
                     {loading ? (
-                        <StatusMessage>불러오는 중...</StatusMessage>
+                        <StatusMessage>로딩 중...</StatusMessage>
                     ) : error ? (
                         <StatusMessage>{error}</StatusMessage>
                     ) : stories.length === 0 ? (
