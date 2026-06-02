@@ -4,6 +4,7 @@ import Header from "../../components/Header";
 import BookCard from "../../components/BookCard";
 import ListSearchIcon from "../../assets/images/icon/list-search.svg";
 import {
+    deleteLibraryStory,
     getLibraryStories,
     type LibrarySortKey,
     type LibraryStoryItem,
@@ -88,6 +89,22 @@ const QuizListPage = () => {
         void fetchPage(page + 1, sortValue, true);
     };
 
+    const handleDelete = async (storyId: number) => {
+        const story = stories.find((s) => s.storyId === storyId);
+
+        const confirmed = window.confirm(
+            `[moretale]\n<${story?.title}>를 삭제하시겠습니까?\n삭제하면 복구할 수 없습니다.`,
+        );
+        if (!confirmed) return;
+
+        try {
+            await deleteLibraryStory(storyId);
+            setStories((prev) => prev.filter((s) => s.storyId !== storyId));
+        } catch {
+            window.alert("동화 삭제 실패");
+        }
+    };
+
     return (
         <Wrapper>
             <Header activeMenu="quiz" />
@@ -147,6 +164,7 @@ const QuizListPage = () => {
                                         primaryLanguage={story.primaryLanguage}
                                         secondaryLanguage={story.secondaryLanguage}
                                         listVariant="quiz"
+                                        onDelete={handleDelete}
                                     />
                                 ))}
                             </BookGrid>
