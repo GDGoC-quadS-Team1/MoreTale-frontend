@@ -3,7 +3,11 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import styled from "styled-components";
 import Header from "../../components/Header";
 import { getStoryDetail, type StoryDetail } from "../../apis/stories";
-import { languageCodeToFlag } from "../../apis/tale";
+import {
+    completeStory,
+    languageCodeToFlag,
+    type StoryCompleteResponse,
+} from "../../apis/tale";
 import PencilIcon from "../../assets/images/tale/pencil.svg";
 import Finish from "../../assets/images/tale/finish.png";
 import ArrowLeftIcon from "../../assets/images/tale/arrow-left.svg";
@@ -33,6 +37,8 @@ const ReadPage = () => {
     const [error, setError] = useState<string | null>(null);
     const [currentSlide, setCurrentSlide] = useState(0);
     const [showFinishScreen, setShowFinishScreen] = useState(false);
+    const [showCompleteNotice, setShowCompleteNotice] = useState(false);
+    const completeRequestSentRef = useRef(false);
 
     const audioPrimaryRef = useRef<HTMLAudioElement | null>(null);
     const audioSecondaryRef = useRef<HTMLAudioElement | null>(null);
@@ -55,6 +61,8 @@ const ReadPage = () => {
                     setStory({ ...data, slides: sortedSlides });
                     setError(null);
                     setShowFinishScreen(false);
+                    setShowCompleteNotice(false);
+                    completeRequestSentRef.current = false;
                     setCurrentSlide(
                         locationState?.startFromLast && storySlides.length > 0
                             ? storySlides.length - 1
@@ -93,6 +101,7 @@ const ReadPage = () => {
     const handleLeftClick = () => {
         if (showFinishScreen) {
             setShowFinishScreen(false);
+            setShowCompleteNotice(false);
             setCurrentSlide(storySlides.length - 1);
             return;
         }
@@ -100,10 +109,29 @@ const ReadPage = () => {
         setCurrentSlide((prev) => prev - 1);
     };
 
-    const handleRightClick = () => {
+    const handleRightClick = async () => {
         if (showFinishScreen) return;
         if (isLastSlide) {
+            const shouldCallCompleteApi = !completeRequestSentRef.current;
             setShowFinishScreen(true);
+            setShowCompleteNotice(false);
+            if (shouldCallCompleteApi) {
+                completeRequestSentRef.current = true;
+                const completeStoryId = story?.storyId ?? storyId;
+                if (completeStoryId != null) {
+                    try {
+                        const response: StoryCompleteResponse = await completeStory(
+                            completeStoryId,
+                        );
+                        const rewardGranted =
+                            response.success && response.data.earnedHoneyJars > 0;
+                        setShowCompleteNotice(rewardGranted);
+                    } catch {
+                        // '오늘의 꿀스티커를 받아요!' 문구 최초 1회만 출력
+                        setShowCompleteNotice(false);
+                    }
+                }
+            }
             return;
         }
         setCurrentSlide((prev) => prev + 1);
@@ -209,7 +237,7 @@ const ReadPage = () => {
                             <FinishBody>
                                 <FinishText>
                                     &lt;{story.title}&gt;을 다 읽었어요!<br />
-                                    오늘의 꿀스티커를 받아요!
+                                    {showCompleteNotice ? "오늘의 꿀스티커를 받아요!" : ""}
                                 </FinishText>
                                 <ImageContainer>
                                     <HoneyImg src={Finish} alt="" />

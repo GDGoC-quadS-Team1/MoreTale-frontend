@@ -175,6 +175,22 @@ export type TaleFlowLocationState = {
     generationError?: string;
 };
 
+export type StoryCompleteReward = {
+    earnedHoneyJars: number;
+    currentHoneyJarCount: number;
+    canGenerateFree: boolean;
+    autoUsedForFreeGeneration: boolean;
+    rewardMessage: string;
+};
+
+export type StoryCompleteResponse = {
+    success: boolean;
+    data: StoryCompleteReward;
+    message?: string;
+    errorCode?: string;
+    timestamp?: string;
+};
+
 const JOB_COMPLETE = new Set([
     "completed",
     "complete",
@@ -424,4 +440,11 @@ export async function pollGenerationJob(
 
         await new Promise((resolve) => window.setTimeout(resolve, intervalMs));
     }
+}
+
+export function completeStory(storyId: number) {
+    return apiFetch("/api/quiz/story-complete", {
+        method: "POST",
+        body: JSON.stringify({ storyId }),
+    }) as Promise<StoryCompleteResponse>;
 }
