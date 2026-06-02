@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import Slogan from "../components/Slogan";
 import LogoYellow from "../assets/images/logo-yellow.svg";
-import LogoBlack from "../assets/images/logo-black.svg";
+import LogoBee from "../assets/images/logo-bee.png";
 import GoogleIcon from "../assets/images/google.svg";
 import { consumeOAuthCallback, startGoogleLogin } from "../lib/auth";
 
@@ -38,7 +38,7 @@ const LoginPage = () => {
                     </LeftContainer>
                     <RightContainer>
                         <LogoContainer>
-                            <LogoBlackImg src={LogoBlack} alt="MORE TALE" />
+                            <LogoBeeImg src={LogoBee} alt="MORE TALE" />
                         </LogoContainer>
                         <GoogleButton type="button" onClick={handleLogin}>
                             <GoogleIconImg src={GoogleIcon} alt="Google" />
@@ -90,7 +90,7 @@ const LeftContainer = styled.div`
     flex: 1;
     min-width: 0;
     height: 600px;
-    padding: 30px 100px 40px 60px;
+    padding: 30px 100px 0 60px;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -102,7 +102,7 @@ const RightContainer = styled.div`
     flex: 1;
     min-width: 0;
     height: 600px;
-    padding: 30px 100px 40px 100px;
+    padding: 30px 100px 0 100px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -148,8 +148,8 @@ const LogoYellowImg = styled.img`
     display: block;
 `;
 
-const LogoBlackImg = styled.img`
-    width: 220px;
+const LogoBeeImg = styled.img`
+    width: 340px;
     height: auto;
     display: block;
 `;
@@ -169,11 +169,12 @@ const GoogleButton = styled.button`
     display: flex;
     align-items: center;
     gap: 56px;
-    transition: opacity 0.2s;
+    margin-bottom: 80px;
+    transition: transform 0.3s;
+
     &:hover {
-        opacity: 0.9;
+        transform: scale(1.01);
     }
-    margin-bottom: 100px;
 `;
 
 const GoogleIconImg = styled.img`
