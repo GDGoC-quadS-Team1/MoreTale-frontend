@@ -3,15 +3,11 @@ import { useNavigate } from "react-router-dom";
 import styled, { keyframes } from "styled-components";
 import Header from "../../components/Header";
 import LoadingImage from "../../assets/images/tale/loading.png";
+import { generateStory, getGenerationJobResult } from "../../apis/stories";
 import { getMyPage } from "../../apis/user";
 import {
     buildGenerateStoryRequest,
-    generateStory,
-    getGenerationJobResult,
-    getGenerationJobStatus,
     getStoryInit,
-    isGenerationJobComplete,
-    isGenerationJobFailed,
 } from "../../apis/tale";
 import { setProfileId } from "../../lib/auth";
 import {
@@ -21,7 +17,7 @@ import {
 } from "../../lib/taleGenerationSession";
 
 const POLL_INTERVAL_MS = 2500;
-const MIN_POLL_MS_BEFORE_FAIL_REDIRECT = 10_000;
+const MAX_POLL_DURATION_MS = 10 * 60 * 1000;
 
 const LoadingPage = () => {
     const navigate = useNavigate();
@@ -43,7 +39,6 @@ const LoadingPage = () => {
 
         let cancelled = false;
         let session: TaleGenerationSession = initialSession;
-        const generationStartedAt = session.generationStartedAt;
 
         const goToLanguageWithError = (message: string) => {
             navigate("/tale/language", {
@@ -55,7 +50,8 @@ const LoadingPage = () => {
             });
         };
 
-        const ensureJobStarted = async (): Promise<string | null> => {
+        /** 1단계: POST /api/stories/generate */
+        const startGeneration = async (): Promise<string | null> => {
             if (session.jobId) {
                 return session.jobId;
             }
@@ -89,59 +85,50 @@ const LoadingPage = () => {
             return job.jobId;
         };
 
-        const poll = async (jobId: string) => {
-            if (cancelled) return;
+        /** 2단계: GET .../generation-jobs/{jobId}/result (409면 재시도) */
+        const pollResult = async (jobId: string) => {
+            const startedAt = session.generationStartedAt;
 
-            try {
-                const { data: job } = await getGenerationJobStatus(jobId);
-                const elapsed = Date.now() - generationStartedAt;
-
-                if (
-                    isGenerationJobFailed(job.status) &&
-                    elapsed >= MIN_POLL_MS_BEFORE_FAIL_REDIRECT
-                ) {
+            while (!cancelled) {
+                if (Date.now() - startedAt > MAX_POLL_DURATION_MS) {
                     goToLanguageWithError(
-                        "동화 생성에 실패했습니다. 잠시 후 다시 시도해주세요.",
+                        "동화 생성 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.",
                     );
                     return;
                 }
 
-                const result = await getGenerationJobResult(jobId);
-                if (result?.slides.length) {
-                    saveTaleGenerationSession({
-                        ...session,
-                        result,
-                    });
-                    navigate("/tale/complete", {
-                        state: { profileId: session.profileId },
-                        replace: true,
-                    });
-                    return;
-                }
+                try {
+                    const result = await getGenerationJobResult(jobId);
 
-                if (
-                    isGenerationJobComplete(job.status) &&
-                    elapsed >= MIN_POLL_MS_BEFORE_FAIL_REDIRECT
-                ) {
+                    if (result?.slides.length) {
+                        saveTaleGenerationSession({
+                            ...session,
+                            result,
+                        });
+                        navigate("/tale/complete", {
+                            state: { profileId: session.profileId },
+                            replace: true,
+                        });
+                        return;
+                    }
+                } catch {
                     goToLanguageWithError(
                         "동화 결과를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.",
                     );
                     return;
                 }
-            } catch {
-                // 작업 완료 전까지 폴링 유지
-            }
 
-            if (!cancelled) {
-                window.setTimeout(() => poll(jobId), POLL_INTERVAL_MS);
+                await new Promise((resolve) =>
+                    window.setTimeout(resolve, POLL_INTERVAL_MS),
+                );
             }
         };
 
         (async () => {
             try {
-                const jobId = await ensureJobStarted();
+                const jobId = await startGeneration();
                 if (!jobId || cancelled) return;
-                await poll(jobId);
+                await pollResult(jobId);
             } catch {
                 if (!cancelled) {
                     goToLanguageWithError(

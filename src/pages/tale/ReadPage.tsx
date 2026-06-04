@@ -73,7 +73,6 @@ const ReadPage = () => {
                             : 0,
                     );
                 }
-                console.log(data);
             } catch {
                 if (!cancelled) {
                     setError("동화를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.");

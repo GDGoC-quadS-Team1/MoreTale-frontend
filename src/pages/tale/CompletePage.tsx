@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import Header from "../../components/Header";
 import YellowButton from "../../components/YellowButton";
-import { getStoryDetail, saveStory } from "../../apis/stories";
+import { saveStory } from "../../apis/stories";
 import {
     getStoryInit,
     languageCodeToFlag,
@@ -38,6 +38,7 @@ const CompletePage = () => {
     const [saveError, setSaveError] = useState<string | null>(null);
 
     const generatedResult = generationSession?.result;
+    const isOnboardingFlow = !generatedResult;
 
     const displayTitle = generatedResult?.title ?? storyInit?.recommendedTaleTitle ?? "";
     const coverImageUrl = useMemo(() => {
@@ -83,7 +84,11 @@ const CompletePage = () => {
                 const { data } = await getStoryInit(profileId);
                 if (!cancelled) {
                     setStoryInit(data);
-                    setError(null);
+                    if (!data.storyId) {
+                        setError("생성된 동화를 찾을 수 없습니다. 새 이야기를 만들어 주세요.");
+                    } else {
+                        setError(null);
+                    }
                 }
             } catch {
                 if (!cancelled) {
@@ -101,6 +106,7 @@ const CompletePage = () => {
         };
     }, [generatedResult, state?.profileId]);
 
+    /** 3단계: POST /api/stories — 2단계 결과를 DB에 저장 */
     const persistGeneratedStory = async (): Promise<number> => {
         if (savedStoryId != null) {
             return savedStoryId;
@@ -150,55 +156,14 @@ const CompletePage = () => {
     };
 
     const handleSaveToLibrary = async () => {
-        if (generationSession?.result) {
-            setIsSaving(true);
-            setSaveError(null);
-
-            try {
-                await persistGeneratedStory();
-                clearTaleGenerationSession();
-                navigate("/lib");
-            } catch {
-                setSaveError("도서관에 저장하지 못했습니다. 잠시 후 다시 시도해주세요.");
-            } finally {
-                setIsSaving(false);
-            }
-            return;
-        }
-
-        if (!storyInit?.storyId) return;
+        if (!generatedResult) return;
 
         setIsSaving(true);
         setSaveError(null);
 
         try {
-            const { data } = await getStoryDetail(storyInit.storyId);
-            const slides = [...data.slides]
-                .sort((a, b) => a.order - b.order)
-                .map(
-                    ({
-                        order,
-                        imageUrl,
-                        textKr,
-                        textNative,
-                        audioUrlKr,
-                        audioUrlNative,
-                    }) => ({
-                        order,
-                        imageUrl,
-                        textKr,
-                        textNative,
-                        audioUrlKr,
-                        audioUrlNative,
-                    }),
-                );
-
-            await saveStory({
-                title: data.title,
-                prompt: data.prompt,
-                profileId: storyInit.profileId,
-                slides,
-            });
+            await persistGeneratedStory();
+            clearTaleGenerationSession();
             navigate("/lib");
         } catch {
             setSaveError("도서관에 저장하지 못했습니다. 잠시 후 다시 시도해주세요.");
@@ -208,7 +173,7 @@ const CompletePage = () => {
     };
 
     const handleReadStory = async () => {
-        if (generationSession?.result) {
+        if (generatedResult) {
             try {
                 const storyId = await persistGeneratedStory();
                 clearTaleGenerationSession();
@@ -227,12 +192,9 @@ const CompletePage = () => {
     const canRead =
         !isLoading &&
         !error &&
-        (generationSession?.result != null || storyInit?.storyId != null);
+        (generatedResult != null || storyInit?.storyId != null);
 
-    const canSave =
-        !isLoading &&
-        !error &&
-        (generationSession?.result != null || storyInit?.storyId != null);
+    const canSave = !isLoading && !error && generatedResult != null;
 
     return (
         <Wrapper>
@@ -250,7 +212,6 @@ const CompletePage = () => {
                                 alt={displayTitle}
                             />
                         )}
-                        {/* {displayTitle && <TaleTitle>{displayTitle}</TaleTitle>} */}
                     </BookImageContainer>
                     <ColumnContainer>
                         <FlagContainer>
@@ -289,19 +250,21 @@ const CompletePage = () => {
                             이야기 보러 가기
                         </YellowButton>
                         {saveError && <SaveErrorText>{saveError}</SaveErrorText>}
-                        <YellowButton
-                            type="button"
-                            width={320}
-                            height={68}
-                            fontSize={28}
-                            borderRadius={5}
-                            backgroundColor={"#515050"}
-                            color={"#FFDE21"}
-                            onClick={handleSaveToLibrary}
-                            disabled={!canSave || isSaving}
-                        >
-                            {isSaving ? "저장 중..." : "도서관에 넣기"}
-                        </YellowButton>
+                        {!isOnboardingFlow && (
+                            <YellowButton
+                                type="button"
+                                width={320}
+                                height={68}
+                                fontSize={28}
+                                borderRadius={5}
+                                backgroundColor={"#515050"}
+                                color={"#FFDE21"}
+                                onClick={handleSaveToLibrary}
+                                disabled={!canSave || isSaving}
+                            >
+                                {isSaving ? "저장 중..." : "도서관에 넣기"}
+                            </YellowButton>
+                        )}
                     </ColumnContainer>
                 </RowContainer>
             </Container>
@@ -386,19 +349,6 @@ const BookImage = styled(Image)`
     margin-top: -140px;
     box-shadow: 0 4px 4px 0 rgba(0, 0, 0, 0.25);
 `;
-
-// const TaleTitle = styled.p`
-//     position: absolute;
-//     z-index: 2;
-//     margin: 120px 0 0;
-//     max-width: 280px;
-//     color: #1F1F1F;
-//     font-size: 22px;
-//     font-weight: 800;
-//     text-align: center;
-//     line-height: 1.3;
-//     pointer-events: none;
-// `;
 
 const RowContainer = styled.div`
     display: flex;

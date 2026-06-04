@@ -1,4 +1,5 @@
-import type { LanguageDisplay, StoryGenerateResult } from "../apis/tale";
+import type { StoryGenerateResult } from "../apis/stories";
+import type { LanguageDisplay } from "../apis/tale";
 
 const STORAGE_KEY = "taleGenerationSession";
 
