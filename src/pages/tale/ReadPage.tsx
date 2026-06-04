@@ -141,17 +141,33 @@ const ReadPage = () => {
         setCurrentSlide((prev) => prev + 1);
     };
 
-    const playPrimary = () => {
+    const stopAllTts = () => {
         if (audioPrimaryRef.current) {
+            audioPrimaryRef.current.pause();
             audioPrimaryRef.current.currentTime = 0;
-            audioPrimaryRef.current.play();
+        }
+        if (audioSecondaryRef.current) {
+            audioSecondaryRef.current.pause();
+            audioSecondaryRef.current.currentTime = 0;
+        }
+        if (wordAudioRef.current) {
+            wordAudioRef.current.pause();
+            wordAudioRef.current.currentTime = 0;
+            wordAudioRef.current = null;
+        }
+    };
+
+    const playPrimary = () => {
+        stopAllTts();
+        if (audioPrimaryRef.current) {
+            void audioPrimaryRef.current.play();
         }
     };
 
     const playSecondary = () => {
+        stopAllTts();
         if (audioSecondaryRef.current) {
-            audioSecondaryRef.current.currentTime = 0;
-            audioSecondaryRef.current.play();
+            void audioSecondaryRef.current.play();
         }
     };
 
@@ -178,10 +194,7 @@ const ReadPage = () => {
     const handleTokenAudioPlay = (audioUrl: string) => {
         if (!audioUrl) return;
 
-        if (wordAudioRef.current) {
-            wordAudioRef.current.pause();
-            wordAudioRef.current.currentTime = 0;
-        }
+        stopAllTts();
 
         const audio = new Audio(audioUrl);
         wordAudioRef.current = audio;
@@ -197,6 +210,7 @@ const ReadPage = () => {
     };
 
     useEffect(() => {
+        stopAllTts();
         setOpenTokenId(null);
         setBookmarkedTokenIds([]);
         clearWordPopoverCloseTimer();
@@ -205,10 +219,7 @@ const ReadPage = () => {
     useEffect(
         () => () => {
             clearWordPopoverCloseTimer();
-            if (wordAudioRef.current) {
-                wordAudioRef.current.pause();
-                wordAudioRef.current = null;
-            }
+            stopAllTts();
         },
         [],
     );
@@ -669,6 +680,8 @@ const TextContainer = styled.div`
 const Flag = styled.img`
     width: 65px;
     height: 43px;
+    border: 1px solid #A0A0A0;
+    box-shadow: 0 4px 4px 0 rgba(0, 0, 0, 0.25);
 `;
 
 const FlagPlaceholder = styled.div`
