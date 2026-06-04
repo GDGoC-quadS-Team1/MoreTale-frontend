@@ -21,9 +21,20 @@ export type StoryToken = {
     highlight: boolean;
     translation: string;
     definition: string;
+    secondaryDefinition?: string;
     audioUrl: string;
     sourceLanguage: string;
     targetLanguage: string;
+};
+
+export type VocabularyEntry = {
+    entryId: string;
+    primaryWord: string;
+    secondaryWord: string;
+    primaryDefinition: string;
+    secondaryDefinition: string;
+    audioUrlPrimary: string;
+    audioUrlSecondary: string;
 };
 
 export type StorySlide = {
@@ -149,6 +160,7 @@ export type GeneratedSlide = {
     textNative: string;
     audioUrlKr: string;
     audioUrlNative: string;
+    vocabulary: VocabularyEntry[];
 };
 
 export type StoryGenerateResult = {
@@ -236,19 +248,136 @@ function normalizeGeneratedSlide(
         textNative: String(slide.textNative ?? ""),
         audioUrlKr: String(slide.audioUrlKr ?? ""),
         audioUrlNative: String(slide.audioUrlNative ?? ""),
+        vocabulary: normalizeVocabulary(slide.vocabulary),
+    };
+}
+
+function normalizeVocabulary(raw: unknown): VocabularyEntry[] {
+    if (!Array.isArray(raw)) {
+        return [];
+    }
+
+    return raw
+        .map((item) => normalizeVocabularyEntry(item))
+        .filter((entry): entry is VocabularyEntry => entry != null);
+}
+
+function normalizeVocabularyEntry(item: unknown): VocabularyEntry | null {
+    if (!item || typeof item !== "object") {
+        return null;
+    }
+
+    const entry = item as Record<string, unknown>;
+    const entryId = String(entry.entryId ?? "").trim();
+    if (!entryId) {
+        return null;
+    }
+
+    return {
+        entryId,
+        primaryWord: String(entry.primaryWord ?? ""),
+        secondaryWord: String(entry.secondaryWord ?? ""),
+        primaryDefinition: String(entry.primaryDefinition ?? ""),
+        secondaryDefinition: String(entry.secondaryDefinition ?? ""),
+        audioUrlPrimary: String(entry.audioUrlPrimary ?? ""),
+        audioUrlSecondary: String(entry.audioUrlSecondary ?? ""),
+    };
+}
+
+function normalizeStoryToken(item: unknown): StoryToken | null {
+    if (!item || typeof item !== "object") {
+        return null;
+    }
+
+    const token = item as Record<string, unknown>;
+    const id = typeof token.id === "number" ? token.id : Number(token.id);
+    if (!Number.isFinite(id)) {
+        return null;
+    }
+
+    const secondaryDefinition = token.secondaryDefinition;
+    return {
+        id,
+        text: String(token.text ?? ""),
+        highlight: Boolean(token.highlight),
+        translation: String(token.translation ?? ""),
+        definition: String(token.definition ?? ""),
+        ...(typeof secondaryDefinition === "string" && secondaryDefinition.trim()
+            ? { secondaryDefinition: secondaryDefinition.trim() }
+            : {}),
+        audioUrl: String(token.audioUrl ?? ""),
+        sourceLanguage: String(token.sourceLanguage ?? ""),
+        targetLanguage: String(token.targetLanguage ?? ""),
+    };
+}
+
+function normalizeSavedSlide(item: unknown, fallbackOrder: number): StorySlide | null {
+    if (!item || typeof item !== "object") {
+        return null;
+    }
+
+    const slide = item as Record<string, unknown>;
+    const slideId =
+        typeof slide.slideId === "number" ? slide.slideId : Number(slide.slideId);
+    if (!Number.isFinite(slideId)) {
+        return null;
+    }
+
+    const tokensRaw = slide.tokens;
+    const tokens = Array.isArray(tokensRaw)
+        ? tokensRaw
+              .map((t) => normalizeStoryToken(t))
+              .filter((t): t is StoryToken => t != null)
+        : [];
+
+    return {
+        slideId,
+        order: typeof slide.order === "number" ? slide.order : fallbackOrder,
+        imageUrl: String(slide.imageUrl ?? ""),
+        textKr: String(slide.textKr ?? ""),
+        textNative: String(slide.textNative ?? ""),
+        audioUrlKr: String(slide.audioUrlKr ?? ""),
+        audioUrlNative: String(slide.audioUrlNative ?? ""),
+        tokens,
+    };
+}
+
+function parseStoryDetail(payload: unknown): StoryDetail {
+    if (!payload || typeof payload !== "object") {
+        throw new Error("동화 상세 응답이 올바르지 않습니다.");
+    }
+
+    const record = payload as Record<string, unknown>;
+    const data = (record.data ?? record) as Record<string, unknown>;
+    const storyId =
+        typeof data.storyId === "number" ? data.storyId : Number(data.storyId);
+    if (!Number.isFinite(storyId)) {
+        throw new Error("동화 ID를 받지 못했습니다.");
+    }
+
+    const slidesRaw = data.slides;
+    const slides = Array.isArray(slidesRaw)
+        ? slidesRaw
+              .map((item, index) => normalizeSavedSlide(item, index))
+              .filter((slide): slide is StorySlide => slide != null)
+        : [];
+
+    return {
+        storyId,
+        title: String(data.title ?? ""),
+        prompt: String(data.prompt ?? ""),
+        childName: String(data.childName ?? ""),
+        primaryLanguage: String(data.primaryLanguage ?? ""),
+        secondaryLanguage: String(data.secondaryLanguage ?? ""),
+        isPublic: Boolean(data.isPublic),
+        createdAt: String(data.createdAt ?? ""),
+        slides,
     };
 }
 
 // --- 3. 생성 결과 저장 POST /api/stories ---
 
-export type SaveStorySlide = {
-    order: number;
-    imageUrl: string;
-    textKr: string;
-    textNative: string;
-    audioUrlKr: string;
-    audioUrlNative: string;
-};
+export type SaveStorySlide = GeneratedSlide;
 
 export type SaveStoryRequest = {
     title: string;
@@ -263,10 +392,14 @@ export async function saveStory(
     const path = "/api/stories";
     logRequest("POST", path, body);
 
-    const response = (await apiFetch(path, {
+    const raw = await apiFetch(path, {
         method: "POST",
         body: JSON.stringify(body),
-    })) as ApiResponse<StoryDetail>;
+    });
+    const response: ApiResponse<StoryDetail> = {
+        success: true,
+        data: parseStoryDetail(raw),
+    };
 
     logResponse("POST", path, response);
     return response;
@@ -280,7 +413,11 @@ export async function getStoryDetail(
     const path = `/api/stories/${storyId}`;
     logRequest("GET", path);
 
-    const response = (await apiFetch(path)) as ApiResponse<StoryDetail>;
+    const raw = await apiFetch(path);
+    const response: ApiResponse<StoryDetail> = {
+        success: true,
+        data: parseStoryDetail(raw),
+    };
 
     logResponse("GET", path, response);
     return response;

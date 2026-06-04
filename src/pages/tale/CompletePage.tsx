@@ -124,25 +124,9 @@ const CompletePage = () => {
             throw new Error("프로필 정보를 찾을 수 없습니다.");
         }
 
-        const slides = [...generationSession.result.slides]
-            .sort((a, b) => a.order - b.order)
-            .map(
-                ({
-                    order,
-                    imageUrl,
-                    textKr,
-                    textNative,
-                    audioUrlKr,
-                    audioUrlNative,
-                }) => ({
-                    order,
-                    imageUrl,
-                    textKr,
-                    textNative,
-                    audioUrlKr,
-                    audioUrlNative,
-                }),
-            );
+        const slides = [...generationSession.result.slides].sort(
+            (a, b) => a.order - b.order,
+        );
 
         const { data } = await saveStory({
             title: generationSession.result.title,
