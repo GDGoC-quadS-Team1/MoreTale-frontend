@@ -18,6 +18,7 @@ import SpeakerIcon from "../../assets/images/tale/speaker.svg";
 import BookmarkIcon from "../../assets/images/tale/bookmark.svg";
 import LibraryIcon from "../../assets/images/icon/library.svg";
 import SettingIcon from "../../assets/images/icon/setting.svg";
+import { cancelSpeech, speakText } from "../../lib/speechSynthesis";
 
 type ReadLocationState = {
     startFromLast?: boolean;
@@ -109,7 +110,6 @@ const ReadPage = () => {
     const audioSecondaryRef = useRef<HTMLAudioElement | null>(null);
     const wordPopoverCloseTimerRef = useRef<number | null>(null);
     const activeWordAnchorRef = useRef<HTMLElement | null>(null);
-    const wordAudioRef = useRef<HTMLAudioElement | null>(null);
     const [openTokenId, setOpenTokenId] = useState<number | null>(null);
     const [openTokenContext, setOpenTokenContext] = useState<WordPopoverContext | null>(
         null,
@@ -223,11 +223,7 @@ const ReadPage = () => {
             audioSecondaryRef.current.pause();
             audioSecondaryRef.current.currentTime = 0;
         }
-        if (wordAudioRef.current) {
-            wordAudioRef.current.pause();
-            wordAudioRef.current.currentTime = 0;
-            wordAudioRef.current = null;
-        }
+        cancelSpeech();
     };
 
     const playPrimary = () => {
@@ -287,14 +283,15 @@ const ReadPage = () => {
         clearWordPopoverCloseTimer();
     };
 
-    const handleTokenAudioPlay = (audioUrl: string) => {
-        if (!audioUrl) return;
-
+    const handleTokenAudioPlay = (token: StoryToken, context: WordPopoverContext) => {
         stopAllTts();
 
-        const audio = new Audio(audioUrl);
-        wordAudioRef.current = audio;
-        void audio.play();
+        if (context === "kr") {
+            speakText(token.text, token.sourceLanguage);
+            return;
+        }
+
+        speakText(token.translation, token.targetLanguage);
     };
 
     const handleTokenBookmark = async (tokenId: number) => {
@@ -598,7 +595,10 @@ const ReadPage = () => {
                         <PopoverActions>
                             <PopoverIconButton
                                 type="button"
-                                onClick={() => handleTokenAudioPlay(openToken.audioUrl)}
+                                aria-label="발음 듣기"
+                                onClick={() =>
+                                    handleTokenAudioPlay(openToken, openTokenContext)
+                                }
                             >
                                 <Image height={18} src={SpeakerIcon} alt="" />
                             </PopoverIconButton>

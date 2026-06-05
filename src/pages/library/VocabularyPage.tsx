@@ -18,6 +18,7 @@ import {
     type VocabularyItem,
 } from "../../apis/vocabulary";
 import { languageCodeToFlag } from "../../apis/tale";
+import { speakText } from "../../lib/speechSynthesis";
 
 const PAGE_SIZE = 20;
 
@@ -160,11 +161,6 @@ const VocabularyPage = () => {
         }
     };
 
-    const playAudio = (url: string) => {
-        if (!url) return;
-        void new Audio(url).play();
-    };
-
     const handleLoadMore = () => {
         if (loading || loadingMore || !hasMore) return;
         void fetchPage(page + 1, debouncedKeyword, true);
@@ -248,15 +244,15 @@ const VocabularyPage = () => {
                                                             <Definition>{item.definition}</Definition>
                                                         ) : null}
                                                     </VocaBlock>
-                                                    {item.audioUrl ? (
-                                                        <SpeakerButton
-                                                            type="button"
-                                                            aria-label="발음 듣기"
-                                                            onClick={() => playAudio(item.audioUrl)}
-                                                        >
-                                                            <SpeakerImg src={SpeakerIcon} alt="" />
-                                                        </SpeakerButton>
-                                                    ) : null}
+                                                    <SpeakerButton
+                                                        type="button"
+                                                        aria-label="발음 듣기"
+                                                        onClick={() =>
+                                                            speakText(item.word, item.sourceLanguage)
+                                                        }
+                                                    >
+                                                        <SpeakerImg src={SpeakerIcon} alt="" />
+                                                    </SpeakerButton>
                                                 </Row1>
                                                 <Row2 $highlighted={item.isFavorite}>
                                                     <TranslationBlock>
