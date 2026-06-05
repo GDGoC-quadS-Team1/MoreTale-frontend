@@ -1,11 +1,22 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import Header from "../components/Header";
 import YellowButton from "../components/YellowButton";
+import {
+    buildMyPageInfoRows,
+    deleteUser,
+    getHoneyWarehouseDisplay,
+    getHoneyProgressCollected,
+    getMyPage,
+    getUsageStatusDisplay,
+    HONEY_JARS_PER_STORY,
+    type MyPageData,
+} from "../apis/user";
+import { clearAuth } from "../lib/auth";
 import ProfileDefault from "../assets/images/mypage/profile-default.svg";
-import MaleIcon from "../assets/images/mypage/male.svg";
-import FemaleIcon from "../assets/images/mypage/female.svg";
+// import MaleIcon from "../assets/images/mypage/male.svg";
+// import FemaleIcon from "../assets/images/mypage/female.svg";
 import HoneyBee1 from "../assets/images/mypage/honey-bee-1.png";
 import HoneyBee2 from "../assets/images/mypage/honey-bee-2.png";
 import HoneyBee3 from "../assets/images/mypage/honey-bee-3.png";
@@ -22,55 +33,106 @@ const SIDEBAR_ITEMS: { key: SidebarKey; label: string }[] = [
     { key: "usage", label: "이용 현황" },
 ];
 
-const CHILD_PROFILE = {
-    name: "한지우",
-    age: 8,
-    gender: "male" as const,
-    email: "jiwoo0420@gmail.com",
-};
-
-const HONEY_WAREHOUSE_DUMMY = {
-    honeyCount: 6,
-    totalCount: 10,
-    jarsPerRow: 5,
-};
-
-const USAGE_STATUS_DUMMY = {
-    currentCount: 3,
-    totalCount: 5,
-};
-
-const INFO_ROWS = [
-    {
-        label: "사용 언어",
-        lines: ["한국어 | 어느 정도 익숙한 번데기 단계", "일본어 | 조금 알아듣는 애벌레 단계"],
-        variant: "default" as const,
-    },
-    {
-        label: "보호자 언어",
-        lines: ["엄마 (일본어), 아빠 (한국어)"],
-        variant: "default" as const,
-    },
-    {
-        label: "듣고 싶은 이야기",
-        lines: ["#신나는_모험_이야기"],
-        variant: "tag" as const,
-    },
-];
+const JARS_PER_ROW = 5;
 
 const MyPage = () => {
     const navigate = useNavigate();
-    
+
     const [activeSidebar, setActiveSidebar] = useState<SidebarKey>("member");
-    const { honeyCount, totalCount, jarsPerRow } = HONEY_WAREHOUSE_DUMMY;
-    const honeyJars = Array.from({ length: totalCount }, (_, index) => index < honeyCount);
-    const honeyShelfRows = [
-        honeyJars.slice(0, jarsPerRow),
-        honeyJars.slice(jarsPerRow),
+    const [myPageData, setMyPageData] = useState<MyPageData | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [isWithdrawing, setIsWithdrawing] = useState(false);
+
+    const handleWithdraw = async () => {
+        if (isWithdrawing) return;
+
+        const confirmed = window.confirm(
+            "[moretale]\n정말 탈퇴하시겠어요?\n탈퇴하면 모든 데이터가 삭제되며 복구할 수 없습니다.",
+        );
+        if (!confirmed) return;
+
+        setIsWithdrawing(true);
+        try {
+            await deleteUser();
+            clearAuth();
+            navigate("/login", { replace: true });
+        } catch {
+            window.alert("회원 탈퇴에 실패했습니다. 잠시 후 다시 시도해주세요.");
+        } finally {
+            setIsWithdrawing(false);
+        }
+    };
+
+    useEffect(() => {
+        let cancelled = false;
+
+        (async () => {
+            try {
+                const { data } = await getMyPage();
+                if (!cancelled) {
+                    setMyPageData(data);
+                    setError(null);
+                }
+            } catch {
+                if (!cancelled) {
+                    setError("마이페이지 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.");
+                }
+            } finally {
+                if (!cancelled) {
+                    setIsLoading(false);
+                }
+            }
+        })();
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    const profile = myPageData?.profiles[0];
+    const accountInfo = myPageData?.accountInfo;
+    const usageStatus = myPageData?.usageStatus;
+
+    const infoRows = useMemo(
+        () => (profile ? buildMyPageInfoRows(profile) : []),
+        [profile],
+    );
+
+    const childName = profile?.childName ?? "";
+
+    if (isLoading) {
+        return (
+            <Wrapper>
+                <Header activeMenu="my" />
+                <StatusMessage>마이페이지를 불러오는 중이에요...</StatusMessage>
+            </Wrapper>
+        );
+    }
+
+    if (error || !myPageData || !profile || !accountInfo || !usageStatus) {
+        return (
+            <Wrapper>
+                <Header activeMenu="my" />
+                <StatusMessage>{error ?? "마이페이지 정보를 찾을 수 없습니다."}</StatusMessage>
+            </Wrapper>
+        );
+    }
+
+    const honeyWarehouse = getHoneyWarehouseDisplay(usageStatus);
+    const usageDisplay = getUsageStatusDisplay(usageStatus);
+    console.log("usageStatus", usageStatus);
+    console.log("honeyJarCount", usageStatus.honeyJarCount);
+    console.log("remainingHoneyJarForFree", usageStatus.remainingHoneyJarForFree);
+    console.log("filledJars", getHoneyProgressCollected(usageStatus));
+    const honeyJarsFilled = Array.from(
+        { length: honeyWarehouse.totalCount },
+        (_, index) => index < honeyWarehouse.filledJars,
+    );
+    const honeyShelfRowsRendered = [
+        honeyJarsFilled.slice(0, JARS_PER_ROW),
+        honeyJarsFilled.slice(JARS_PER_ROW),
     ];
-    const { currentCount: usageCurrent, totalCount: usageTotal } = USAGE_STATUS_DUMMY;
-    const usageProgress = Math.min(usageCurrent / usageTotal, 1);
-    const usageRemaining = Math.max(usageTotal - usageCurrent, 0);
 
     return (
         <Wrapper>
@@ -101,25 +163,31 @@ const MyPage = () => {
                                 <ProfileInfoContainer>
                                     <NameRow>
                                         <Name>
-                                            <ChildName>{CHILD_PROFILE.name}</ChildName>
+                                            <ChildName>{profile.childName}</ChildName>
                                             <ChildRole>어린이</ChildRole>
                                             <NameDivider aria-hidden />
-                                            <ChildAge>{CHILD_PROFILE.age}세</ChildAge>
+                                            <ChildAge>{profile.childAge}세</ChildAge>
                                         </Name>
-                                        <GenderIcon
+                                        {/* <GenderIcon
                                             src={CHILD_PROFILE.gender === "male" ? MaleIcon : FemaleIcon}
                                             alt={CHILD_PROFILE.gender === "male" ? "남" : "여"}
-                                        />
+                                        /> */}
                                     </NameRow>
-                                    <Email>{CHILD_PROFILE.email}</Email>
+                                    <Email>{accountInfo.email}</Email>
                                 </ProfileInfoContainer>
-                                <WithdrawButton type="button">회원 탈퇴</WithdrawButton>
+                                <WithdrawButton
+                                    type="button"
+                                    onClick={handleWithdraw}
+                                    disabled={isWithdrawing}
+                                >
+                                    {isWithdrawing ? "탈퇴 처리 중..." : "회원 탈퇴"}
+                                </WithdrawButton>
                             </ProfileCard>
 
                             <SectionTitle>프로필 정보</SectionTitle>
 
                             <InfoList>
-                                {INFO_ROWS.map((row) => (
+                                {infoRows.map((row) => (
                                     <InfoCard key={row.label}>
                                         <InfoLabel>{row.label}</InfoLabel>
                                         <InfoDivider aria-hidden />
@@ -141,14 +209,17 @@ const MyPage = () => {
 
                     {activeSidebar === "honey" && (
                         <>
-                            <HoneyTitle>한지우의 꿀창고</HoneyTitle>
+                            <HoneyTitle>{childName}의 꿀창고</HoneyTitle>
                             <HoneyCard>
                                 <HoneyStatus>
                                     <HoneyStatusMain>
-                                        꿀단지를 <HoneyCount>{honeyCount}</HoneyCount>개 모았어요!
+                                        꿀단지를{" "}
+                                        <HoneyCount>{honeyWarehouse.honeyJarCount}</HoneyCount>개
+                                        모았어요!
                                     </HoneyStatusMain>
                                     <HoneyStatusSub>
-                                        {totalCount}개를 모으면 동화 하나를 생성할 수 있어요
+                                        {HONEY_JARS_PER_STORY}개를 모으면 동화 하나를 생성할 수
+                                        있어요
                                     </HoneyStatusSub>
                                 </HoneyStatus>
 
@@ -157,7 +228,7 @@ const MyPage = () => {
                                     <Bee2 src={HoneyBee2} alt="" />
                                     <Bee3 src={HoneyBee3} alt="" />
 
-                                    {honeyShelfRows.map((row, rowIndex) => (
+                                    {honeyShelfRowsRendered.map((row, rowIndex) => (
                                         <ShelfRow key={rowIndex}>
                                             <JarSlots>
                                                 {row.map((isFilled, jarIndex) => (
@@ -185,26 +256,29 @@ const MyPage = () => {
                                 <UsageStatusMain>
                                     무료 동화 생성{" "}
                                     <UsageCount>
-                                        {usageCurrent} / {usageTotal}
+                                        {usageDisplay.freeStoriesUsed} /{" "}
+                                        {usageDisplay.freeStoryQuota}
                                     </UsageCount>{" "}
                                     회 완료
                                 </UsageStatusMain>
 
                                 <ProgressBarWrap>
                                     <ProgressBarTrack>
-                                        <ProgressBarFill $progress={usageProgress} />
+                                        <ProgressBarFill
+                                            $progress={usageDisplay.usageProgress}
+                                        />
                                     </ProgressBarTrack>
                                     <ProgressBee
                                         src={UsageBee}
                                         alt=""
-                                        $progress={usageProgress}
+                                        $progress={usageDisplay.usageProgress}
                                     />
                                 </ProgressBarWrap>
 
                                 <UsageSummary>
-                                    벌써 동화 {usageCurrent}개를 만들었어요!
+                                    벌써 동화를 {usageDisplay.totalStoriesCreated}개 만들었어요!
                                     <br />
-                                    아직 {usageRemaining}번 더 만들 수 있어요
+                                    아직 {usageDisplay.remainingFreeStories}번 더 만들 수 있어요
                                 </UsageSummary>
                             </UsageCard>
 
@@ -231,16 +305,28 @@ export default MyPage;
 
 const Wrapper = styled.div`
     background: #FFDE21;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
     width: 100%;
+    min-width: 1200px;
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
+`;
+
+const StatusMessage = styled.p`
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    margin: 0;
+    padding: 48px 24px;
+    background: #F2F2F2;
+    color: #424242;
+    font-size: 20px;
+    font-weight: 700;
+    text-align: center;
 `;
 
 const Container = styled.div`
@@ -371,12 +457,12 @@ const ChildAge = styled.span`
     color: #424242;
 `;
 
-const GenderIcon = styled.img`
-    width: auto;
-    height: 32px;
-    display: block;
-    margin-left: 4px;
-`;
+// const GenderIcon = styled.img`
+//     width: auto;
+//     height: 32px;
+//     display: block;
+//     margin-left: 4px;
+// `;
 
 const Email = styled.p`
     margin: 0;
@@ -394,6 +480,11 @@ const WithdrawButton = styled.button`
     font-weight: 800;
     white-space: nowrap;
     cursor: pointer;
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
 `;
 
 const SectionTitle = styled.p`

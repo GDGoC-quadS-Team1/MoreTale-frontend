@@ -10,7 +10,6 @@ import LanguagePage from './pages/tale/LanguagePage';
 import LoadingPage from './pages/tale/LoadingPage';
 import CompletePage from './pages/tale/CompletePage';
 import ReadPage from './pages/tale/ReadPage';
-import FinishPage from './pages/tale/FinishPage';
 import LibraryPage from './pages/library/LibraryPage';
 import VocabularyPage from './pages/library/VocabularyPage';
 import QuizListPage from './pages/quiz/QuizListPage';
@@ -23,7 +22,7 @@ function App() {
       <Routes>
         <Route path="/" element={<LoginPage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignUpPage />} />
+        <Route path="/onboarding" element={<SignUpPage />} />
         <Route path="/profile-complete" element={<ProfileComplete />} />
         <Route path="/home" element={<HomePage />} />
 
@@ -33,9 +32,7 @@ function App() {
         <Route path="/tale/language" element={<LanguagePage />} />
         <Route path="/tale/loading" element={<LoadingPage />} />
         <Route path="/tale/complete" element={<CompletePage />} />
-        <Route path="/tale/read" element={<ReadPage />} />
-        <Route path="/tale/finish" element={<FinishPage />} />
-        <Route path="/tale/finish" element={<FinishPage />} />
+        <Route path="/tale/read/:storyId" element={<ReadPage />} />
         
         {/* LIBRARY */}
         <Route path="/lib" element={<LibraryPage />} />

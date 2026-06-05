@@ -1,64 +1,173 @@
-import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import styled from "styled-components";
 import Header from "../../components/Header";
 import BookStand from "../../assets/images/tale/book-stand.png";
 import BookCover from "../../assets/images/tale/book-cover-ex.png";
 import KoreaFlag from "../../assets/images/tale/flag/korea.png";
-import JapanFlag from "../../assets/images/tale/flag/japan.png";
 import StarEmpty from "../../assets/images/icon/star-empty.svg";
 import StarFilled from "../../assets/images/icon/star-filled.svg";
 import DeleteIcon from "../../assets/images/icon/delete.svg";
 import LibraryIcon from "../../assets/images/icon/library.svg";
 import SearchIcon from "../../assets/images/icon/search.svg";
 import SpeakerIcon from "../../assets/images/icon/speaker-black.svg";
+import {
+    deleteVocabulary,
+    getVocabulary,
+    updateVocabulary,
+    type VocabularyItem,
+} from "../../apis/vocabulary";
+import { languageCodeToFlag } from "../../apis/tale";
 
-type VocaItem = {
-    id: number;
-    kanji: string;
-    furigana: string;
-    koreanReading: string;
-    korean: string;
-    starred: boolean;
+const PAGE_SIZE = 20;
+
+function sortVocabularyItems(items: VocabularyItem[]): VocabularyItem[] {
+    return [...items].sort((a, b) => {
+        if (a.isFavorite !== b.isFavorite) return a.isFavorite ? -1 : 1;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+}
+
+type VocabularyLocationState = {
+    title?: string;
+    coverSrc?: string;
+    primaryLanguage?: string;
+    secondaryLanguage?: string;
 };
-
-const BOOK_TITLE = "달을 따러 간 소년";
-
-const INITIAL_VOCAB: VocaItem[] = [
-    { id: 1, kanji: "月", furigana: "つき", koreanReading: "츠키", korean: "달", starred: false },
-    { id: 2, kanji: "星", furigana: "ほし", koreanReading: "호시", korean: "별", starred: false },
-    { id: 3, kanji: "約束", furigana: "やくそく", koreanReading: "야쿠소쿠", korean: "약속", starred: false },
-    { id: 4, kanji: "夢", furigana: "ゆめ", koreanReading: "유메", korean: "꿈", starred: true },
-    { id: 5, kanji: "願い", furigana: "ねがい", koreanReading: "네가이", korean: "소원", starred: false },
-    { id: 6, kanji: "光", furigana: "ひかり", koreanReading: "히카리", korean: "빛", starred: true },
-];
 
 const VocabularyPage = () => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const location = useLocation();
+    const locationState = (location.state ?? {}) as VocabularyLocationState;
 
-    const [items, setItems] = useState<VocaItem[]>(INITIAL_VOCAB);
+    const storyIdParam = searchParams.get("storyId");
+    const storyId = storyIdParam ? Number(storyIdParam) : undefined;
+
+    const [items, setItems] = useState<VocabularyItem[]>([]);
     const [search, setSearch] = useState("");
+    const [debouncedKeyword, setDebouncedKeyword] = useState("");
+    const [page, setPage] = useState(0);
+    const [hasMore, setHasMore] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-    const filteredItems = useMemo(() => {
-        const q = search.trim().toLowerCase();
-        if (!q) return items;
-        return items.filter(
-            (item) =>
-                item.kanji.includes(q) ||
-                item.furigana.includes(q) ||
-                item.korean.includes(q) ||
-                item.koreanReading.toLowerCase().includes(q),
-        );
-    }, [items, search]);
+    useEffect(() => {
+        const timer = window.setTimeout(() => setDebouncedKeyword(search.trim()), 300);
+        return () => window.clearTimeout(timer);
+    }, [search]);
 
-    const toggleStar = (id: number) => {
+    const fetchPage = useCallback(
+        async (pageToLoad: number, keyword: string, append: boolean) => {
+            if (append) {
+                setLoadingMore(true);
+            } else {
+                setLoading(true);
+                setError(null);
+            }
+
+            try {
+                const { data } = await getVocabulary({
+                    page: pageToLoad,
+                    size: PAGE_SIZE,
+                    sort: "created-desc",
+                    storyId: storyId != null && !Number.isNaN(storyId) ? storyId : undefined,
+                    keyword: keyword || undefined,
+                });
+                setItems((prev) => (append ? [...prev, ...data.content] : data.content));
+                setPage(data.number);
+                setHasMore(!data.last);
+            } catch {
+                setError("단어장을 불러오지 못했습니다.");
+                if (!append) setItems([]);
+            } finally {
+                setLoading(false);
+                setLoadingMore(false);
+            }
+        },
+        [storyId],
+    );
+
+    useEffect(() => {
+        void fetchPage(0, debouncedKeyword, false);
+    }, [debouncedKeyword, fetchPage]);
+
+    const bookTitle = useMemo(() => {
+        if (locationState.title) return locationState.title;
+        if (items.length > 0) return items[0].storyTitle;
+        return storyId != null ? "단어장" : "전체 단어장";
+    }, [locationState.title, items, storyId]);
+
+    const coverSrc = locationState.coverSrc ?? BookCover;
+
+    const primaryFlag = useMemo(() => {
+        const code = locationState.primaryLanguage ?? items[0]?.sourceLanguage;
+        return code ? languageCodeToFlag(code) : KoreaFlag;
+    }, [locationState.primaryLanguage, items]);
+
+    const secondaryFlag = useMemo(() => {
+        const code = locationState.secondaryLanguage ?? items[0]?.targetLanguage;
+        return code ? languageCodeToFlag(code) : undefined;
+    }, [locationState.secondaryLanguage, items]);
+
+    const handleToggleStar = async (vocabularyId: number) => {
+        const item = items.find((v) => v.vocabularyId === vocabularyId);
+        if (!item) return;
+
+        const nextFavorite = !item.isFavorite;
+
         setItems((prev) =>
-            prev.map((item) => (item.id === id ? { ...item, starred: !item.starred } : item)),
+            sortVocabularyItems(
+                prev.map((v) =>
+                    v.vocabularyId === vocabularyId ? { ...v, isFavorite: nextFavorite } : v,
+                ),
+            ),
         );
+
+        try {
+            const { data } = await updateVocabulary(vocabularyId, { isFavorite: nextFavorite });
+            setItems((prev) =>
+                sortVocabularyItems(
+                    prev.map((v) => (v.vocabularyId === vocabularyId ? data : v)),
+                ),
+            );
+        } catch {
+            setItems((prev) =>
+                sortVocabularyItems(
+                    prev.map((v) =>
+                        v.vocabularyId === vocabularyId ? { ...v, isFavorite: item.isFavorite } : v,
+                    ),
+                ),
+            );
+            window.alert("즐겨찾기 변경에 실패했습니다.");
+        }
     };
 
-    const removeItem = (id: number) => {
-        setItems((prev) => prev.filter((item) => item.id !== id));
+    const handleDelete = async (vocabularyId: number) => {
+        const item = items.find((v) => v.vocabularyId === vocabularyId);
+
+        const confirmed = window.confirm(
+            `[moretale]\n'${item?.word ?? "단어"}' 단어를 삭제하시겠습니까?\n삭제하면 복구할 수 없습니다.`,
+        );
+        if (!confirmed) return;
+
+        try {
+            await deleteVocabulary(vocabularyId);
+            setItems((prev) => prev.filter((v) => v.vocabularyId !== vocabularyId));
+        } catch {
+            window.alert("단어 삭제에 실패했습니다.");
+        }
+    };
+
+    const playAudio = (url: string) => {
+        if (!url) return;
+        void new Audio(url).play();
+    };
+
+    const handleLoadMore = () => {
+        if (loading || loadingMore || !hasMore) return;
+        void fetchPage(page + 1, debouncedKeyword, true);
     };
 
     return (
@@ -67,15 +176,15 @@ const VocabularyPage = () => {
             <Container>
                 <ContentShell>
                     <TitleContainer>
-                        <BookTitle>{BOOK_TITLE}</BookTitle>
+                        <BookTitle>{bookTitle}</BookTitle>
                         <FlagGroup>
-                            <FlagIcon src={JapanFlag} alt="일본어" />
-                            <FlagIcon src={KoreaFlag} alt="한국어" />
+                            {primaryFlag ? <FlagIcon src={primaryFlag} alt="" /> : null}
+                            {secondaryFlag ? <FlagIcon src={secondaryFlag} alt="" /> : null}
                         </FlagGroup>
                     </TitleContainer>
 
                     <BookCoverContainer aria-hidden>
-                        <BookCoverImg src={BookCover} alt="" />
+                        <BookCoverImg src={coverSrc} alt="" />
                         <BookStandImg src={BookStand} alt="" />
                     </BookCoverContainer>
 
@@ -83,7 +192,7 @@ const VocabularyPage = () => {
                         <ToolContainer>
                             <SearchField>
                                 <SearchInput
-                                    placeholder=""
+                                    placeholder="단어 검색"
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
                                 />
@@ -94,53 +203,86 @@ const VocabularyPage = () => {
                             </LibraryButton>
                         </ToolContainer>
 
-                        <CardGrid>
-                            {filteredItems.map((item, index) => (
-                                <VocaCard key={item.id}>
-                                    <CardHeader $starred={item.starred}>
-                                        <CardIndex>{index + 1}</CardIndex>
-                                        <CardActions>
-                                            <IconButton
-                                                type="button"
-                                                aria-label={item.starred ? "즐겨찾기 해제" : "즐겨찾기"}
-                                                onClick={() => toggleStar(item.id)}
-                                            >
-                                                <ActionIcon src={item.starred ? StarFilled : StarEmpty} alt="" />
-                                            </IconButton>
-                                            <IconButton
-                                                type="button"
-                                                aria-label="삭제"
-                                                onClick={() => removeItem(item.id)}
-                                            >
-                                                <ActionIcon src={DeleteIcon} alt="" />
-                                            </IconButton>
-                                        </CardActions>
-                                    </CardHeader>
-                                    <CardBody>
-                                        <Row1>
-                                            <VocaBlock>
-                                                <RubyWrap>
-                                                    <ruby>
-                                                        {item.kanji}
-                                                        <rt>{item.furigana}</rt>
-                                                    </ruby>
-                                                </RubyWrap>
-                                                <Reading>{item.koreanReading}</Reading>
-                                            </VocaBlock>
-                                            <SpeakerButton type="button" aria-label="일본어 발음">
-                                                <SpeakerImg src={SpeakerIcon} alt="" />
-                                            </SpeakerButton>
-                                        </Row1>
-                                        <Row2 $highlighted={item.starred}>
-                                            {item.korean}
-                                            <SpeakerButton type="button" aria-label="한국어 발음">
-                                                <SpeakerImg src={SpeakerIcon} alt="" />
-                                            </SpeakerButton>
-                                        </Row2>
-                                    </CardBody>
-                                </VocaCard>
-                            ))}
-                        </CardGrid>
+                        {loading ? (
+                            <StatusMessage>불러오는 중...</StatusMessage>
+                        ) : error ? (
+                            <StatusMessage>{error}</StatusMessage>
+                        ) : items.length === 0 ? (
+                            <StatusMessage>
+                                {debouncedKeyword ? "검색 결과가 없습니다." : "저장된 단어가 없습니다."}
+                            </StatusMessage>
+                        ) : (
+                            <>
+                                <CardGrid>
+                                    {items.map((item, index) => (
+                                        <VocaCard key={item.vocabularyId}>
+                                            <CardHeader $starred={item.isFavorite}>
+                                                <CardIndex>{index + 1}</CardIndex>
+                                                <CardActions>
+                                                    <IconButton
+                                                        type="button"
+                                                        aria-label={
+                                                            item.isFavorite ? "즐겨찾기 해제" : "즐겨찾기"
+                                                        }
+                                                        onClick={() => void handleToggleStar(item.vocabularyId)}
+                                                    >
+                                                        <ActionIcon
+                                                            src={item.isFavorite ? StarFilled : StarEmpty}
+                                                            alt=""
+                                                        />
+                                                    </IconButton>
+                                                    <IconButton
+                                                        type="button"
+                                                        aria-label="삭제"
+                                                        onClick={() => void handleDelete(item.vocabularyId)}
+                                                    >
+                                                        <ActionIcon src={DeleteIcon} alt="" />
+                                                    </IconButton>
+                                                </CardActions>
+                                            </CardHeader>
+                                            <CardBody>
+                                                <Row1>
+                                                    <VocaBlock>
+                                                        <WordText>{item.word}</WordText>
+                                                        {item.definition ? (
+                                                            <Definition>{item.definition}</Definition>
+                                                        ) : null}
+                                                    </VocaBlock>
+                                                    {item.audioUrl ? (
+                                                        <SpeakerButton
+                                                            type="button"
+                                                            aria-label="발음 듣기"
+                                                            onClick={() => playAudio(item.audioUrl)}
+                                                        >
+                                                            <SpeakerImg src={SpeakerIcon} alt="" />
+                                                        </SpeakerButton>
+                                                    ) : null}
+                                                </Row1>
+                                                <Row2 $highlighted={item.isFavorite}>
+                                                    <TranslationBlock>
+                                                        <TranslationText>{item.translation}</TranslationText>
+                                                        {item.secondaryDefinition ? (
+                                                            <SecondaryDefinition>
+                                                                {item.secondaryDefinition}
+                                                            </SecondaryDefinition>
+                                                        ) : null}
+                                                    </TranslationBlock>
+                                                </Row2>
+                                            </CardBody>
+                                        </VocaCard>
+                                    ))}
+                                </CardGrid>
+                                {hasMore ? (
+                                    <LoadMoreButton
+                                        type="button"
+                                        onClick={handleLoadMore}
+                                        disabled={loadingMore}
+                                    >
+                                        {loadingMore ? "불러오는 중..." : "더 보기"}
+                                    </LoadMoreButton>
+                                ) : null}
+                            </>
+                        )}
                     </MainCard>
                 </ContentShell>
             </Container>
@@ -152,12 +294,9 @@ export default VocabularyPage;
 
 const Wrapper = styled.div`
     background: #FFDE21;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
     width: 100%;
+    min-width: 1200px;
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -306,6 +445,37 @@ const LibraryIconImg = styled.img`
     display: block;
 `;
 
+const StatusMessage = styled.p`
+    margin: 0;
+    text-align: center;
+    color: #757575;
+    font-size: 16px;
+    font-weight: 600;
+    padding: 40px 0;
+`;
+
+const LoadMoreButton = styled.button`
+    display: block;
+    margin: 32px auto 0;
+    padding: 10px 24px;
+    border: 1px solid #424242;
+    border-radius: 5px;
+    background: #ffffff;
+    color: #424242;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    &:hover:not(:disabled) {
+        background: #fafafa;
+    }
+`;
+
 const CardGrid = styled.div`
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -374,44 +544,52 @@ const Row1 = styled.div`
 
 const VocaBlock = styled.div`
     display: flex;
-    align-items: flex-end;
-    gap: 20px;
+    flex-direction: column;
+    gap: 8px;
     flex: 1;
 `;
 
-const RubyWrap = styled.span`
+const WordText = styled.span`
     font-size: 40px;
     font-weight: 800;
     color: #1F1F1F;
-
-    ruby {
-        ruby-align: center;
-    }
-
-    rt {
-        font-size: 12px;
-        margin-bottom: 8px;
-    }
+    line-height: 1.2;
 `;
 
-const Reading = styled.span`
+const Definition = styled.span`
     color: #949494;
-    font-size: 24px;
-    font-weight: 800;
-    margin-bottom: 8px;
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.4;
 `;
 
 const Row2 = styled.div<{ $highlighted?: boolean }>`
     flex: 1;
     display: flex;
-    display-direction: row;
-    justify-content: space-between;
     padding: 20px;
     border-radius: 8px;
     background: ${({ $highlighted }) => ($highlighted ? "#FDEFA4" : "#F4F3F0")};
+`;
+
+const TranslationBlock = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+`;
+
+const TranslationText = styled.span`
     color: #424242;
     font-size: 36px;
     font-weight: 800;
+    line-height: 1.2;
+`;
+
+const SecondaryDefinition = styled.span`
+    color: #757575;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.4;
 `;
 
 const SpeakerButton = styled.button`
@@ -421,6 +599,7 @@ const SpeakerButton = styled.button`
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
 `;
 
 const SpeakerImg = styled.img`
