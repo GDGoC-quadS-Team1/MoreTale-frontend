@@ -2,9 +2,9 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import Slogan from "../components/Slogan";
-import LogoYellow from "../assets/images/logo-yellow.svg";
-import LogoBee from "../assets/images/logo-bee.png";
-import GoogleIcon from "../assets/images/google.svg";
+import LogoYellow from "../assets/images/logo/logo-yellow.svg";
+import LogoBee from "../assets/images/logo/logo-bee.png";
+import GoogleIcon from "../assets/images/logo/google.svg";
 import { consumeOAuthCallback, startGoogleLogin } from "../lib/auth";
 
 const LoginPage = () => {

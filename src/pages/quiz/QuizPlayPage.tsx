@@ -5,7 +5,7 @@ import Header from "../../components/Header";
 import PencilIcon from "../../assets/images/tale/pencil.svg";
 import ArrowLeftIcon from "../../assets/images/tale/arrow-left.svg";
 import ArrowRightIcon from "../../assets/images/tale/arrow-right.svg";
-import QuizScoreImg from "../../assets/images/quiz-score.png";
+import QuizScoreImg from "../../assets/images/tale/quiz-score.png";
 import {
     getQuizByStoryId,
     submitQuiz,

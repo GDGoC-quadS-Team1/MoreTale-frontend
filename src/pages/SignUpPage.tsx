@@ -10,8 +10,8 @@ import styled from "styled-components";
 import Slogan from "../components/Slogan";
 import InputField from "../components/InputField";
 import YellowButton from "../components/YellowButton";
-import LogoYellow from "../assets/images/logo-yellow.svg";
-import ArrowIcon from "../assets/images/arrow.svg";
+import LogoYellow from "../assets/images/logo/logo-yellow.svg";
+import ArrowIcon from "../assets/images/icon/arrow.svg";
 
 const PROFICIENCY_LEVELS = [
     { key: "egg", label: "알" },
