@@ -47,7 +47,7 @@ const Header = ({ activeMenu }: HeaderProps) => {
                 <MenuContainer>
                     <Menu type="button" $active={activeMenu === 'tale'} onClick={() => navigate("/tale/intro")}>TALE</Menu>
                     <Menu type="button" $active={activeMenu === 'library'} onClick={() => navigate("/lib")}>LIBRARY</Menu>
-                    <Menu type="button" $active={activeMenu === 'voca'} onClick={() => navigate("/voca")}>VOCA</Menu>
+                    <Menu type="button" $active={activeMenu === 'voca'} $clickable={false}>VOCA</Menu>
                     <Menu type="button" $active={activeMenu === 'quiz'} onClick={() => navigate("/quiz")}>QUIZ</Menu>
                     <Menu type="button" $active={activeMenu === 'my'} onClick={() => navigate("/mypage")}>MY</Menu>
                 </MenuContainer>
@@ -114,7 +114,7 @@ const MenuContainer = styled.div`
     gap: 40px;
 `;
 
-const Menu = styled.button<{ $active?: boolean }>`
+const Menu = styled.button<{ $active?: boolean; $clickable?: boolean }>`
     font-family: Gudea;
     font-size: 20px;
     font-style: normal;
@@ -125,7 +125,7 @@ const Menu = styled.button<{ $active?: boolean }>`
     border-radius: 3px;
     background: ${({ $active }) => ($active ? '#1F1F1F' : 'transparent')};
     color: ${({ $active }) => ($active ? '#FFDE21' : '#1F1F1F')};
-    cursor: pointer;
+    cursor: ${({ $clickable = true }) => ($clickable ? 'pointer' : 'default')};
 `;
 
 const ProfileDropdown = styled.div`

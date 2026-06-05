@@ -84,7 +84,19 @@ const BookCard = ({
                     {/* 생성일 & 단어장 */}
                     <Footer>
                         <DateText>{date}</DateText>
-                        <WordButton type="button" onClick={() => navigate("/voca")}>
+                        <WordButton
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (storyId != null) {
+                                    navigate(`/voca?storyId=${storyId}`, {
+                                        state: { title, coverSrc, primaryLanguage, secondaryLanguage },
+                                    });
+                                } else {
+                                    navigate("/voca");
+                                }
+                            }}
+                        >
                             <WordIcon src={wordIcon} alt="" />
                         </WordButton>
                     </Footer>
@@ -123,7 +135,17 @@ const BookCard = ({
                                 읽기
                             </PopoverButton>
                             <PopoverDivider />
-                            <PopoverButton onClick={() => navigate("/voca")}>단어장</PopoverButton>
+                            <PopoverButton
+                                onClick={() =>
+                                    storyId != null
+                                        ? navigate(`/voca?storyId=${storyId}`, {
+                                            state: { title, coverSrc, primaryLanguage, secondaryLanguage },
+                                        })
+                                        : navigate("/voca")
+                                }
+                            >
+                                단어장
+                            </PopoverButton>
                         </>
                     )}
                 </CardPopover>
