@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import LogoBlack from '../assets/images/logo-black.svg';
-import Profile from '../assets/images/profile.svg';
+import LogoBlack from '../assets/images/logo/logo-black.svg';
+import Profile from '../assets/images/icon/profile.svg';
 import { clearAuth, getAccessToken } from '../lib/auth';
 
 type HeaderMenuKey = 'tale' | 'library' | 'voca' | 'quiz' | 'my';

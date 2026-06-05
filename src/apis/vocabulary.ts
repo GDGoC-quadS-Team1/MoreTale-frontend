@@ -1,15 +1,5 @@
 import { apiFetch } from "../lib/api";
 
-const LOG = "[Vocabulary API]";
-
-function logRequest(method: string, path: string, body?: unknown) {
-    console.log(`${LOG} → ${method} ${path}`, body ?? "");
-}
-
-function logResponse(method: string, path: string, data: unknown) {
-    console.log(`${LOG} ← ${method} ${path}`, data);
-}
-
 export type SaveVocabularyRequest = {
     tokenId: number;
     slideId: number;
@@ -105,22 +95,18 @@ export async function getVocabulary(params: {
     }
 
     const path = `/api/vocabulary?${query}`;
-    logRequest("GET", path);
-
     const response = await apiFetch(path) as VocabularyListResponse;
-    logResponse("GET", path, response);
+
     return response;
 }
 
 export function saveVocabulary(body: SaveVocabularyRequest) {
     const path = "/api/vocabulary";
-    logRequest("POST", path, body);
 
     return apiFetch(path, {
         method: "POST",
         body: JSON.stringify(body),
     }).then((data) => {
-        logResponse("POST", path, data);
         return data as SaveVocabularyResponse;
     });
 }
@@ -141,28 +127,23 @@ export type UpdateVocabularyRequest = {
 
 export function updateVocabulary(vocabularyId: number, body: UpdateVocabularyRequest) {
     const path = `/api/vocabulary/${vocabularyId}`;
-    logRequest("PATCH", path, body);
 
     return apiFetch(path, {
         method: "PATCH",
         body: JSON.stringify(body),
     }).then((data) => {
-        logResponse("PATCH", path, data);
         return data as SaveVocabularyResponse;
     });
 }
 
 export function deleteVocabulary(vocabularyId: number) {
     const path = `/api/vocabulary/${vocabularyId}`;
-    logRequest("DELETE", path);
 
     return apiFetch(path, {
         method: "DELETE",
     }).then((data) => {
-        logResponse("DELETE", path, data);
         return data as DeleteVocabularyResponse;
     });
 }
 
-/** @deprecated use VocabularyItem */
 export type SavedVocabulary = VocabularyItem;

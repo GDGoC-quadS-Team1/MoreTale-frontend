@@ -317,7 +317,7 @@ const ReadPage = () => {
                 sourceLanguage: token.sourceLanguage,
                 targetLanguage: token.targetLanguage,
             });
-            console.log("response", response);
+            
             if (response.success) {
                 setBookmarkedTokenIds((prev) =>
                     prev.includes(tokenId) ? prev : [...prev, tokenId],

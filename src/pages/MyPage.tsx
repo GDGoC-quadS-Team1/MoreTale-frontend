@@ -121,10 +121,7 @@ const MyPage = () => {
 
     const honeyWarehouse = getHoneyWarehouseDisplay(usageStatus);
     const usageDisplay = getUsageStatusDisplay(usageStatus);
-    console.log("usageStatus", usageStatus);
-    console.log("honeyJarCount", usageStatus.honeyJarCount);
-    console.log("remainingHoneyJarForFree", usageStatus.remainingHoneyJarForFree);
-    console.log("filledJars", getHoneyProgressCollected(usageStatus));
+    
     const honeyJarsFilled = Array.from(
         { length: honeyWarehouse.totalCount },
         (_, index) => index < honeyWarehouse.filledJars,

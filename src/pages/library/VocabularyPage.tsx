@@ -3,7 +3,6 @@ import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import styled from "styled-components";
 import Header from "../../components/Header";
 import BookStand from "../../assets/images/tale/book-stand.png";
-import BookCover from "../../assets/images/tale/book-cover-ex.png";
 import KoreaFlag from "../../assets/images/tale/flag/korea.png";
 import StarEmpty from "../../assets/images/icon/star-empty.svg";
 import StarFilled from "../../assets/images/icon/star-filled.svg";
@@ -100,7 +99,7 @@ const VocabularyPage = () => {
         return storyId != null ? "단어장" : "전체 단어장";
     }, [locationState.title, items, storyId]);
 
-    const coverSrc = locationState.coverSrc ?? BookCover;
+    const coverSrc = locationState.coverSrc;
 
     const primaryFlag = useMemo(() => {
         const code = locationState.primaryLanguage ?? items[0]?.sourceLanguage;
@@ -179,10 +178,12 @@ const VocabularyPage = () => {
                         </FlagGroup>
                     </TitleContainer>
 
-                    <BookCoverContainer aria-hidden>
-                        <BookCoverImg src={coverSrc} alt="" />
-                        <BookStandImg src={BookStand} alt="" />
-                    </BookCoverContainer>
+                    {coverSrc ? (
+                        <BookCoverContainer aria-hidden>
+                            <BookCoverImg src={coverSrc} alt="" />
+                            <BookStandImg src={BookStand} alt="" />
+                        </BookCoverContainer>
+                    ) : null}
 
                     <MainCard>
                         <ToolContainer>

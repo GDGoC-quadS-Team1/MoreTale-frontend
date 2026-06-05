@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
-import bookCoverEx from "../assets/images/tale/book-cover-ex.png";
 import koreaFlag from "../assets/images/tale/flag/korea.png";
 import wordIcon from "../assets/images/icon/word.svg";
 import moreIcon from "../assets/images/icon/more.svg";
@@ -23,9 +22,9 @@ export interface BookCardProps {
 
 const BookCard = ({
     storyId,
-    title = "달을 따라 간 소년",
-    date = "2026.03.29.",
-    coverSrc = bookCoverEx,
+    title,
+    date,
+    coverSrc,
     primaryLanguage,
     secondaryLanguage,
     listVariant = "library",
@@ -65,7 +64,7 @@ const BookCard = ({
     return (
         <Card ref={cardRef} onClick={() => { setMorePopover(false); setCardPopover((prev) => !prev); }}>
             <CardContent>
-                <Cover src={coverSrc} alt="" />
+                {coverSrc ? <Cover src={coverSrc} alt="" /> : null}
                 <Body>
                     {/* 제목 & 더보기 버튼 */}
                     <TitleRow>

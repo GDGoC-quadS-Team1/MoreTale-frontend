@@ -34,13 +34,6 @@ export function speakText(text: string, languageCode?: string): void {
 
     const voices = window.speechSynthesis.getVoices();
 
-    console.log(
-        voices.map((v) => ({
-            name: v.name,
-            lang: v.lang,
-        })),
-    );
-
     // Korean voice selection
     if (languageCode === "ko") {
         const koreanVoice =
