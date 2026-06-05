@@ -14,11 +14,19 @@ import SpeakerIcon from "../../assets/images/icon/speaker-black.svg";
 import {
     deleteVocabulary,
     getVocabulary,
+    updateVocabulary,
     type VocabularyItem,
 } from "../../apis/vocabulary";
 import { languageCodeToFlag } from "../../apis/tale";
 
 const PAGE_SIZE = 20;
+
+function sortVocabularyItems(items: VocabularyItem[]): VocabularyItem[] {
+    return [...items].sort((a, b) => {
+        if (a.isFavorite !== b.isFavorite) return a.isFavorite ? -1 : 1;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+}
 
 type VocabularyLocationState = {
     title?: string;
@@ -103,14 +111,37 @@ const VocabularyPage = () => {
         return code ? languageCodeToFlag(code) : undefined;
     }, [locationState.secondaryLanguage, items]);
 
-    const toggleStar = (vocabularyId: number) => {
+    const handleToggleStar = async (vocabularyId: number) => {
+        const item = items.find((v) => v.vocabularyId === vocabularyId);
+        if (!item) return;
+
+        const nextFavorite = !item.isFavorite;
+
         setItems((prev) =>
-            prev.map((item) =>
-                item.vocabularyId === vocabularyId
-                    ? { ...item, isFavorite: !item.isFavorite }
-                    : item,
+            sortVocabularyItems(
+                prev.map((v) =>
+                    v.vocabularyId === vocabularyId ? { ...v, isFavorite: nextFavorite } : v,
+                ),
             ),
         );
+
+        try {
+            const { data } = await updateVocabulary(vocabularyId, { isFavorite: nextFavorite });
+            setItems((prev) =>
+                sortVocabularyItems(
+                    prev.map((v) => (v.vocabularyId === vocabularyId ? data : v)),
+                ),
+            );
+        } catch {
+            setItems((prev) =>
+                sortVocabularyItems(
+                    prev.map((v) =>
+                        v.vocabularyId === vocabularyId ? { ...v, isFavorite: item.isFavorite } : v,
+                    ),
+                ),
+            );
+            window.alert("즐겨찾기 변경에 실패했습니다.");
+        }
     };
 
     const handleDelete = async (vocabularyId: number) => {
@@ -193,7 +224,7 @@ const VocabularyPage = () => {
                                                         aria-label={
                                                             item.isFavorite ? "즐겨찾기 해제" : "즐겨찾기"
                                                         }
-                                                        onClick={() => toggleStar(item.vocabularyId)}
+                                                        onClick={() => void handleToggleStar(item.vocabularyId)}
                                                     >
                                                         <ActionIcon
                                                             src={item.isFavorite ? StarFilled : StarEmpty}

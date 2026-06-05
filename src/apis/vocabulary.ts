@@ -133,6 +133,25 @@ type DeleteVocabularyResponse = {
     timestamp?: string;
 };
 
+export type UpdateVocabularyRequest = {
+    isFavorite?: boolean;
+    learningStatus?: string;
+    memo?: string;
+};
+
+export function updateVocabulary(vocabularyId: number, body: UpdateVocabularyRequest) {
+    const path = `/api/vocabulary/${vocabularyId}`;
+    logRequest("PATCH", path, body);
+
+    return apiFetch(path, {
+        method: "PATCH",
+        body: JSON.stringify(body),
+    }).then((data) => {
+        logResponse("PATCH", path, data);
+        return data as SaveVocabularyResponse;
+    });
+}
+
 export function deleteVocabulary(vocabularyId: number) {
     const path = `/api/vocabulary/${vocabularyId}`;
     logRequest("DELETE", path);
