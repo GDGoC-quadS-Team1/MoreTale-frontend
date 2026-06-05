@@ -3,15 +3,6 @@ import { getAccessToken } from "../lib/auth";
 import type { AgeGroup, ProficiencyLevel, StoryPreference } from "./user";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
-const LOG = "[Story API]";
-
-function logRequest(method: string, path: string, body?: unknown) {
-    console.log(`${LOG} → ${method} ${path}`, body ?? "");
-}
-
-function logResponse(method: string, path: string, data: unknown) {
-    console.log(`${LOG} ← ${method} ${path}`, data);
-}
 
 // --- 공통 타입 ---
 
@@ -102,7 +93,6 @@ export async function generateStory(
     body: GenerateStoryRequest,
 ): Promise<ApiResponse<StoryGenerationJob>> {
     const path = "/api/stories/generate";
-    logRequest("POST", path, body);
 
     const headers = new Headers({ "Content-Type": "application/json" });
     const token = getAccessToken();
@@ -119,13 +109,13 @@ export async function generateStory(
     const parsed = await response.json();
 
     if (!response.ok) {
-        console.error(`${LOG} ✗ POST ${path}`, response.status, parsed);
+        console.error(`POST ${path}`, response.status, parsed);
         throw new Error(`API ${response.status}: ${path}`);
     }
 
     const job = parseGenerationJob(parsed);
     const result = { success: true, data: job };
-    logResponse("POST", path, result);
+    
     return result;
 }
 
@@ -175,7 +165,6 @@ export async function getGenerationJobResult(
     jobId: string,
 ): Promise<StoryGenerateResult | null> {
     const path = `/api/stories/generation-jobs/${encodeURIComponent(jobId)}/result`;
-    logRequest("GET", path);
 
     const headers = new Headers();
     const token = getAccessToken();
@@ -185,20 +174,15 @@ export async function getGenerationJobResult(
 
     const response = await fetch(`${API_BASE}${path}`, { headers });
 
-    if (response.status === 409) {
-        console.log(`${LOG} ← GET ${path} (409 – 아직 생성 중)`);
-        return null;
-    }
-
     const parsed = await response.json();
 
     if (!response.ok) {
-        console.error(`${LOG} ✗ GET ${path}`, response.status, parsed);
+        console.error(`GET ${path}`, response.status, parsed);
         throw new Error(`API ${response.status}: ${path}`);
     }
 
     const result = parseGenerationResult(parsed);
-    logResponse("GET", path, { success: true, data: result });
+    
     return result;
 }
 
@@ -390,7 +374,6 @@ export async function saveStory(
     body: SaveStoryRequest,
 ): Promise<ApiResponse<StoryDetail>> {
     const path = "/api/stories";
-    logRequest("POST", path, body);
 
     const raw = await apiFetch(path, {
         method: "POST",
@@ -401,7 +384,6 @@ export async function saveStory(
         data: parseStoryDetail(raw),
     };
 
-    logResponse("POST", path, response);
     return response;
 }
 
@@ -411,7 +393,6 @@ export async function getStoryDetail(
     storyId: number,
 ): Promise<ApiResponse<StoryDetail>> {
     const path = `/api/stories/${storyId}`;
-    logRequest("GET", path);
 
     const raw = await apiFetch(path);
     const response: ApiResponse<StoryDetail> = {
@@ -419,6 +400,5 @@ export async function getStoryDetail(
         data: parseStoryDetail(raw),
     };
 
-    logResponse("GET", path, response);
     return response;
 }
