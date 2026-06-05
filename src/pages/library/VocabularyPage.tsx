@@ -12,6 +12,7 @@ import LibraryIcon from "../../assets/images/icon/library.svg";
 import SearchIcon from "../../assets/images/icon/search.svg";
 import SpeakerIcon from "../../assets/images/icon/speaker-black.svg";
 import {
+    deleteVocabulary,
     getVocabulary,
     type VocabularyItem,
 } from "../../apis/vocabulary";
@@ -112,8 +113,20 @@ const VocabularyPage = () => {
         );
     };
 
-    const removeItem = (vocabularyId: number) => {
-        setItems((prev) => prev.filter((item) => item.vocabularyId !== vocabularyId));
+    const handleDelete = async (vocabularyId: number) => {
+        const item = items.find((v) => v.vocabularyId === vocabularyId);
+
+        const confirmed = window.confirm(
+            `[moretale]\n'${item?.word ?? "단어"}' 단어를 삭제하시겠습니까?\n삭제하면 복구할 수 없습니다.`,
+        );
+        if (!confirmed) return;
+
+        try {
+            await deleteVocabulary(vocabularyId);
+            setItems((prev) => prev.filter((v) => v.vocabularyId !== vocabularyId));
+        } catch {
+            window.alert("단어 삭제에 실패했습니다.");
+        }
     };
 
     const playAudio = (url: string) => {
@@ -190,7 +203,7 @@ const VocabularyPage = () => {
                                                     <IconButton
                                                         type="button"
                                                         aria-label="삭제"
-                                                        onClick={() => removeItem(item.vocabularyId)}
+                                                        onClick={() => void handleDelete(item.vocabularyId)}
                                                     >
                                                         <ActionIcon src={DeleteIcon} alt="" />
                                                     </IconButton>

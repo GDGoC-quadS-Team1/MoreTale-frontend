@@ -125,5 +125,25 @@ export function saveVocabulary(body: SaveVocabularyRequest) {
     });
 }
 
+type DeleteVocabularyResponse = {
+    success: boolean;
+    data: Record<string, never>;
+    message?: string;
+    errorCode?: string;
+    timestamp?: string;
+};
+
+export function deleteVocabulary(vocabularyId: number) {
+    const path = `/api/vocabulary/${vocabularyId}`;
+    logRequest("DELETE", path);
+
+    return apiFetch(path, {
+        method: "DELETE",
+    }).then((data) => {
+        logResponse("DELETE", path, data);
+        return data as DeleteVocabularyResponse;
+    });
+}
+
 /** @deprecated use VocabularyItem */
 export type SavedVocabulary = VocabularyItem;
