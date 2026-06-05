@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import styled from "styled-components";
 import Header from "../../components/Header";
-import { getStoryDetail, type StoryDetail } from "../../apis/stories";
+import { getStoryDetail, type StoryDetail, type StoryToken } from "../../apis/stories";
+import { saveVocabulary } from "../../apis/vocabulary";
 import {
     completeStory,
     languageCodeToFlag,
@@ -21,6 +23,69 @@ type ReadLocationState = {
     startFromLast?: boolean;
     storyId?: number;
 };
+
+type TextSegment =
+    | { kind: "text"; value: string }
+    | { kind: "token"; token: StoryToken };
+
+function buildTextSegments(
+    text: string,
+    tokens: StoryToken[],
+    getMatchText: (token: StoryToken) => string = (token) => token.text,
+): TextSegment[] {
+    const highlightTokens = tokens.filter((token) => token.highlight);
+    if (!text || highlightTokens.length === 0) {
+        return [{ kind: "text", value: text }];
+    }
+
+    const matches = highlightTokens
+        .map((token) => {
+            const matchText = getMatchText(token);
+            if (!matchText) return null;
+            const start = text.indexOf(matchText);
+            if (start === -1) return null;
+            return { start, end: start + matchText.length, token };
+        })
+        .filter((match): match is NonNullable<typeof match> => match != null)
+        .sort((a, b) => a.start - b.start);
+
+    const segments: TextSegment[] = [];
+    let cursor = 0;
+
+    for (const match of matches) {
+        if (match.start < cursor) continue;
+        if (match.start > cursor) {
+            segments.push({ kind: "text", value: text.slice(cursor, match.start) });
+        }
+        segments.push({ kind: "token", token: match.token });
+        cursor = match.end;
+    }
+
+    if (cursor < text.length) {
+        segments.push({ kind: "text", value: text.slice(cursor) });
+    }
+
+    return segments.length > 0 ? segments : [{ kind: "text", value: text }];
+}
+
+const WORD_POPOVER_GAP = 8;
+const WORD_POPOVER_ESTIMATED_HEIGHT = 200;
+
+type WordPopoverPlacement = "top" | "bottom";
+type WordPopoverContext = "kr" | "native";
+
+function getWordPopoverPlacement(rect: DOMRect): WordPopoverPlacement {
+    const spaceAbove = rect.top;
+    const spaceBelow = window.innerHeight - rect.bottom;
+
+    if (spaceAbove >= WORD_POPOVER_ESTIMATED_HEIGHT + WORD_POPOVER_GAP) {
+        return "top";
+    }
+    if (spaceBelow >= WORD_POPOVER_ESTIMATED_HEIGHT + WORD_POPOVER_GAP) {
+        return "bottom";
+    }
+    return spaceBelow > spaceAbove ? "bottom" : "top";
+}
 
 const ReadPage = () => {
     const navigate = useNavigate();
@@ -43,9 +108,17 @@ const ReadPage = () => {
     const audioPrimaryRef = useRef<HTMLAudioElement | null>(null);
     const audioSecondaryRef = useRef<HTMLAudioElement | null>(null);
     const wordPopoverCloseTimerRef = useRef<number | null>(null);
+    const activeWordAnchorRef = useRef<HTMLElement | null>(null);
     const wordAudioRef = useRef<HTMLAudioElement | null>(null);
     const [openTokenId, setOpenTokenId] = useState<number | null>(null);
+    const [openTokenContext, setOpenTokenContext] = useState<WordPopoverContext | null>(
+        null,
+    );
+    const [popoverAnchor, setPopoverAnchor] = useState<DOMRect | null>(null);
+    const [popoverPlacement, setPopoverPlacement] =
+        useState<WordPopoverPlacement>("top");
     const [bookmarkedTokenIds, setBookmarkedTokenIds] = useState<number[]>([]);
+    const [savingTokenIds, setSavingTokenIds] = useState<number[]>([]);
 
     useEffect(() => {
         if (storyId == null || Number.isNaN(storyId)) {
@@ -178,17 +251,40 @@ const ReadPage = () => {
         }
     };
 
-    const handleWordMouseEnter = (tokenId: number) => {
+    const updatePopoverAnchor = () => {
+        const anchor = activeWordAnchorRef.current;
+        if (!anchor) return;
+
+        const rect = anchor.getBoundingClientRect();
+        setPopoverAnchor(rect);
+        setPopoverPlacement(getWordPopoverPlacement(rect));
+    };
+
+    const handleWordMouseEnter = (
+        tokenId: number,
+        anchor: HTMLElement,
+        context: WordPopoverContext,
+    ) => {
         clearWordPopoverCloseTimer();
+        activeWordAnchorRef.current = anchor;
         setOpenTokenId(tokenId);
+        setOpenTokenContext(context);
+        updatePopoverAnchor();
     };
 
     const handleWordMouseLeave = () => {
         clearWordPopoverCloseTimer();
         wordPopoverCloseTimerRef.current = window.setTimeout(() => {
             setOpenTokenId(null);
+            setOpenTokenContext(null);
+            setPopoverAnchor(null);
+            activeWordAnchorRef.current = null;
             wordPopoverCloseTimerRef.current = null;
         }, 140);
+    };
+
+    const handleWordPopoverMouseEnter = () => {
+        clearWordPopoverCloseTimer();
     };
 
     const handleTokenAudioPlay = (audioUrl: string) => {
@@ -201,18 +297,68 @@ const ReadPage = () => {
         void audio.play();
     };
 
-    const toggleTokenBookmark = (tokenId: number) => {
-        setBookmarkedTokenIds((prev) =>
-            prev.includes(tokenId)
-                ? prev.filter((id) => id !== tokenId)
-                : [...prev, tokenId],
-        );
+    const handleTokenBookmark = async (tokenId: number) => {
+        if (bookmarkedTokenIds.includes(tokenId)) {
+            setBookmarkedTokenIds((prev) => prev.filter((id) => id !== tokenId));
+            return;
+        }
+
+        if (!story || !slide || savingTokenIds.includes(tokenId)) return;
+
+        const token = slide.tokens.find((t) => t.id === tokenId);
+        if (!token) return;
+
+        setSavingTokenIds((prev) => [...prev, tokenId]);
+        try {
+            const response = await saveVocabulary({
+                tokenId: token.id,
+                slideId: slide.slideId,
+                storyId: story.storyId,
+                word: token.text,
+                translation: token.translation,
+                definition: token.definition,
+                sourceLanguage: token.sourceLanguage,
+                targetLanguage: token.targetLanguage,
+            });
+            if (response.success) {
+                setBookmarkedTokenIds((prev) =>
+                    prev.includes(tokenId) ? prev : [...prev, tokenId],
+                );
+            }
+        } catch {
+            // 저장 실패 시 UI 상태는 유지
+        } finally {
+            setSavingTokenIds((prev) => prev.filter((id) => id !== tokenId));
+        }
     };
+
+    const openToken = useMemo(() => {
+        if (openTokenId == null || !slide) return null;
+        return slide.tokens.find((token) => token.id === openTokenId) ?? null;
+    }, [openTokenId, slide]);
+
+    useEffect(() => {
+        if (openTokenId == null) return;
+
+        const syncPopoverPosition = () => updatePopoverAnchor();
+
+        window.addEventListener("scroll", syncPopoverPosition, true);
+        window.addEventListener("resize", syncPopoverPosition);
+
+        return () => {
+            window.removeEventListener("scroll", syncPopoverPosition, true);
+            window.removeEventListener("resize", syncPopoverPosition);
+        };
+    }, [openTokenId]);
 
     useEffect(() => {
         stopAllTts();
         setOpenTokenId(null);
+        setOpenTokenContext(null);
+        setPopoverAnchor(null);
+        activeWordAnchorRef.current = null;
         setBookmarkedTokenIds([]);
+        setSavingTokenIds([]);
         clearWordPopoverCloseTimer();
     }, [slide?.slideId]);
 
@@ -339,7 +485,32 @@ const ReadPage = () => {
                                             <FlagPlaceholder>{story.primaryLanguage}</FlagPlaceholder>
                                         )}
                                         <Lang>
-                                            <LangText>{slide.textKr}</LangText>
+                                            <LangText>
+                                                {buildTextSegments(slide.textKr, slide.tokens).map(
+                                                    (segment, index) =>
+                                                        segment.kind === "text" ? (
+                                                            <span key={`text-${index}`}>
+                                                                {segment.value}
+                                                            </span>
+                                                        ) : (
+                                                            <WordWrapper
+                                                                key={segment.token.id}
+                                                                onMouseEnter={(event) =>
+                                                                    handleWordMouseEnter(
+                                                                        segment.token.id,
+                                                                        event.currentTarget,
+                                                                        "kr",
+                                                                    )
+                                                                }
+                                                                onMouseLeave={handleWordMouseLeave}
+                                                            >
+                                                                <WordHighlight>
+                                                                    {segment.token.text}
+                                                                </WordHighlight>
+                                                            </WordWrapper>
+                                                        ),
+                                                )}
+                                            </LangText>
                                             <SpeakerButton type="button" aria-label="" onClick={playPrimary}>
                                                 <Image height={36} src={SpeakerIcon} alt="" />
                                             </SpeakerButton>
@@ -353,63 +524,33 @@ const ReadPage = () => {
                                         )}
                                         <Lang>
                                             <LangText>
-                                                {slide.tokens.length > 0
-                                                    ? slide.tokens.map((token, index) => (
-                                                        token.highlight ? (
-                                                            <WordWrapper
-                                                                key={token.id}
-                                                                onMouseEnter={() => handleWordMouseEnter(token.id)}
-                                                                onMouseLeave={handleWordMouseLeave}
-                                                            >
-                                                                <WordHighlight>{token.text}</WordHighlight>
-                                                                {index < slide.tokens.length - 1 ? " " : ""}
-                                                                {openTokenId === token.id && (
-                                                                    <WordPopover>
-                                                                        <PopoverWord>{token.text}</PopoverWord>
-                                                                        <PopoverMeta>
-                                                                            번역: {token.translation}
-                                                                        </PopoverMeta>
-                                                                        <PopoverDefinition>
-                                                                            {token.definition}
-                                                                        </PopoverDefinition>
-                                                                        <PopoverActions>
-                                                                            <PopoverIconButton
-                                                                                type="button"
-                                                                                onClick={() =>
-                                                                                    handleTokenAudioPlay(
-                                                                                        token.audioUrl,
-                                                                                    )
-                                                                                }
-                                                                            >
-                                                                                <Image
-                                                                                    height={18}
-                                                                                    src={SpeakerIcon}
-                                                                                    alt=""
-                                                                                />
-                                                                            </PopoverIconButton>
-                                                                            <PopoverBookmarkButton
-                                                                                type="button"
-                                                                                $active={bookmarkedTokenIds.includes(
-                                                                                    token.id,
-                                                                                )}
-                                                                                onClick={() =>
-                                                                                    toggleTokenBookmark(token.id)
-                                                                                }
-                                                                            >
-                                                                                단어 저장
-                                                                            </PopoverBookmarkButton>
-                                                                        </PopoverActions>
-                                                                    </WordPopover>
-                                                                )}
-                                                            </WordWrapper>
-                                                        ) : (
-                                                            <span key={token.id}>
-                                                                {token.text}
-                                                                {index < slide.tokens.length - 1 ? " " : ""}
-                                                            </span>
-                                                        )
-                                                    ))
-                                                    : slide.textNative}
+                                                {buildTextSegments(
+                                                    slide.textNative,
+                                                    slide.tokens,
+                                                    (token) => token.translation,
+                                                ).map((segment, index) =>
+                                                    segment.kind === "text" ? (
+                                                        <span key={`native-text-${index}`}>
+                                                            {segment.value}
+                                                        </span>
+                                                    ) : (
+                                                        <WordWrapper
+                                                            key={`native-token-${segment.token.id}`}
+                                                            onMouseEnter={(event) =>
+                                                                handleWordMouseEnter(
+                                                                    segment.token.id,
+                                                                    event.currentTarget,
+                                                                    "native",
+                                                                )
+                                                            }
+                                                            onMouseLeave={handleWordMouseLeave}
+                                                        >
+                                                            <WordHighlight>
+                                                                {segment.token.translation}
+                                                            </WordHighlight>
+                                                        </WordWrapper>
+                                                    ),
+                                                )}
                                             </LangText>
                                             <SpeakerButton type="button" aria-label="" onClick={playSecondary}>
                                                 <Image height={36} src={SpeakerIcon} alt="" />
@@ -422,6 +563,60 @@ const ReadPage = () => {
                     )}
                 </BookContainer>
             </Container>
+            {openToken &&
+                openTokenContext &&
+                popoverAnchor &&
+                createPortal(
+                    <WordPopoverFloating
+                        $left={popoverAnchor.left + popoverAnchor.width / 2}
+                        $top={
+                            popoverPlacement === "top"
+                                ? popoverAnchor.top - WORD_POPOVER_GAP
+                                : popoverAnchor.bottom + WORD_POPOVER_GAP
+                        }
+                        $placement={popoverPlacement}
+                        onMouseEnter={handleWordPopoverMouseEnter}
+                        onMouseLeave={handleWordMouseLeave}
+                    >
+                        <PopoverWord>
+                            {openTokenContext === "kr"
+                                ? openToken.text
+                                : openToken.translation}
+                        </PopoverWord>
+                        <PopoverMeta>
+                            번역:{" "}
+                            {openTokenContext === "kr"
+                                ? openToken.translation
+                                : openToken.text}
+                        </PopoverMeta>
+                        <PopoverDefinition>
+                            {openTokenContext === "kr"
+                                ? openToken.definition
+                                : openToken.secondaryDefinition}
+                        </PopoverDefinition>
+                        <PopoverActions>
+                            <PopoverIconButton
+                                type="button"
+                                onClick={() => handleTokenAudioPlay(openToken.audioUrl)}
+                            >
+                                <Image height={18} src={SpeakerIcon} alt="" />
+                            </PopoverIconButton>
+                            <PopoverBookmarkButton
+                                type="button"
+                                $active={bookmarkedTokenIds.includes(openToken.id)}
+                                disabled={savingTokenIds.includes(openToken.id)}
+                                onClick={() => void handleTokenBookmark(openToken.id)}
+                            >
+                                {savingTokenIds.includes(openToken.id)
+                                    ? "저장 중..."
+                                    : bookmarkedTokenIds.includes(openToken.id)
+                                      ? "저장됨"
+                                      : "단어 저장"}
+                            </PopoverBookmarkButton>
+                        </PopoverActions>
+                    </WordPopoverFloating>,
+                    document.body,
+                )}
         </Wrapper>
     );
 };
@@ -737,18 +932,26 @@ const WordHighlight = styled.span`
     }
 `;
 
-const WordPopover = styled.div`
-    position: absolute;
-    bottom: calc(100% + 8px);
-    left: 50%;
-    transform: translateX(-50%);
+const WordPopoverFloating = styled.div<{
+    $left: number;
+    $top: number;
+    $placement: WordPopoverPlacement;
+}>`
+    position: fixed;
+    left: ${(props) => props.$left}px;
+    top: ${(props) => props.$top}px;
+    transform: ${(props) =>
+        props.$placement === "top"
+            ? "translate(-50%, -100%)"
+            : "translateX(-50%)"};
     min-width: 200px;
     padding: 16px;
     border-radius: 12px;
     background: #FFFFFF;
     border: 1px solid #DFDFDF;
     box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
-    z-index: 999;
+    z-index: 10000;
+    pointer-events: auto;
 `;
 
 const PopoverWord = styled.p`
@@ -805,4 +1008,9 @@ const PopoverBookmarkButton = styled.button<{ $active: boolean }>`
     font-weight: 700;
     padding: 8px 10px;
     cursor: pointer;
+
+    &:disabled {
+        cursor: not-allowed;
+        opacity: 0.7;
+    }
 `;
