@@ -261,6 +261,7 @@ export default CompletePage;
 const Wrapper = styled.div`
     background: #FFDE21;
     width: 100%;
+    min-width: 1200px;
     min-height: 100dvh;
     display: flex;
     flex-direction: column;

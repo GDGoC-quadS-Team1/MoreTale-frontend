@@ -320,13 +320,14 @@ const ReadPage = () => {
                 sourceLanguage: token.sourceLanguage,
                 targetLanguage: token.targetLanguage,
             });
+            console.log("response", response);
             if (response.success) {
                 setBookmarkedTokenIds((prev) =>
                     prev.includes(tokenId) ? prev : [...prev, tokenId],
                 );
             }
-        } catch {
-            // 저장 실패 시 UI 상태는 유지
+        } catch(error) {
+            console.error("saveVocabulary error", error);
         } finally {
             setSavingTokenIds((prev) => prev.filter((id) => id !== tokenId));
         }
@@ -626,6 +627,7 @@ export default ReadPage;
 const Wrapper = styled.div`
     background: #FFDE21;
     width: 100%;
+    min-width: 1200px;
     min-height: 100dvh;
     display: flex;
     flex-direction: column;
