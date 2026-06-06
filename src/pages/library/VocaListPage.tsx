@@ -27,7 +27,7 @@ function formatCreatedAt(iso: string): string {
     return `${y}.${m}.${day}.`;
 }
 
-const LibraryPage = () => {
+const VocaListPage = () => {
     const [sortOpen, setSortOpen] = useState(false);
     const [sortValue, setSortValue] = useState<LibrarySortKey>("created-desc");
     const [stories, setStories] = useState<LibraryStoryItem[]>([]);
@@ -107,7 +107,7 @@ const LibraryPage = () => {
 
     return (
         <Wrapper>
-            <Header activeMenu="library" />
+            <Header activeMenu="voca" />
             <Container>
                 <Content>
                     <SortContainer>
@@ -164,7 +164,7 @@ const LibraryPage = () => {
                                         coverSrc={story.thumbnail}
                                         primaryLanguage={story.primaryLanguage}
                                         secondaryLanguage={story.secondaryLanguage}
-                                        listVariant="library"
+                                        listVariant="voca"
                                         onDelete={handleDelete}
                                     />
                                 ))}
@@ -186,7 +186,7 @@ const LibraryPage = () => {
     );
 };
 
-export default LibraryPage;
+export default VocaListPage;
 
 const Wrapper = styled.div`
     background: #FFDE21;

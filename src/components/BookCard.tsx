@@ -6,7 +6,7 @@ import wordIcon from "../assets/images/icon/word.svg";
 import moreIcon from "../assets/images/icon/more.svg";
 import { languageCodeToFlag } from "../apis/tale";
 
-export type BookCardListVariant = "library" | "quiz";
+export type BookCardListVariant = "library" | "voca" | "quiz";
 
 export interface BookCardProps {
     storyId?: number;
@@ -15,7 +15,7 @@ export interface BookCardProps {
     coverSrc?: string;
     primaryLanguage?: string;
     secondaryLanguage?: string;
-    /* 카드 클릭 시 버튼 : library → [읽기 | 단어장], quiz → [퀴즈 풀기] */
+    /* 카드 클릭 시 버튼 : library → [읽기], voca → [단어장], quiz → [퀴즈 풀기] */
     listVariant?: BookCardListVariant;
     onDelete?: (storyId: number) => void | Promise<void>;
 }
@@ -61,6 +61,16 @@ const BookCard = ({
         void onDelete(storyId);
     };
 
+    const navigateToVocabulary = () => {
+        if (storyId != null) {
+            navigate(`/voca/detail?storyId=${storyId}`, {
+                state: { title, coverSrc, primaryLanguage, secondaryLanguage },
+            });
+        } else {
+            navigate("/voca/detail");
+        }
+    };
+
     return (
         <Card ref={cardRef} onClick={() => { setMorePopover(false); setCardPopover((prev) => !prev); }}>
             <CardContent>
@@ -83,21 +93,17 @@ const BookCard = ({
                     {/* 생성일 & 단어장 */}
                     <Footer>
                         <DateText>{date}</DateText>
-                        <WordButton
-                            type="button"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                if (storyId != null) {
-                                    navigate(`/voca?storyId=${storyId}`, {
-                                        state: { title, coverSrc, primaryLanguage, secondaryLanguage },
-                                    });
-                                } else {
-                                    navigate("/voca");
-                                }
-                            }}
-                        >
-                            <WordIcon src={wordIcon} alt="" />
-                        </WordButton>
+                        {listVariant === "quiz" ? (
+                            <WordButton
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigateToVocabulary();
+                                }}
+                            >
+                                <WordIcon src={wordIcon} alt="" />
+                            </WordButton>
+                        ) : null}
                     </Footer>
                 </Body>
             </CardContent>
@@ -107,7 +113,7 @@ const BookCard = ({
                 <Overlay onClick={(e) => e.stopPropagation()} />
             )}
 
-            {/* [팝오버] library → [읽기 | 단어장], quiz → [퀴즈 풀기] */}
+            {/* [팝오버] library → [읽기], voca → [단어장], quiz → [퀴즈 풀기] */}
             {cardPopover && (
                 <CardPopover onClick={(e) => e.stopPropagation()}>
                     {listVariant === "quiz" ? (
@@ -122,30 +128,20 @@ const BookCard = ({
                         >
                             퀴즈 풀기
                         </PopoverButton>
+                    ) : listVariant === "voca" ? (
+                        <PopoverButton onClick={navigateToVocabulary}>
+                            단어장
+                        </PopoverButton>
                     ) : (
-                        <>
-                            <PopoverButton
-                                onClick={() =>
-                                    storyId != null
-                                        ? navigate(`/tale/read/${storyId}`)
-                                        : navigate("/tale/read")
-                                }
-                            >
-                                읽기
-                            </PopoverButton>
-                            <PopoverDivider />
-                            <PopoverButton
-                                onClick={() =>
-                                    storyId != null
-                                        ? navigate(`/voca?storyId=${storyId}`, {
-                                            state: { title, coverSrc, primaryLanguage, secondaryLanguage },
-                                        })
-                                        : navigate("/voca")
-                                }
-                            >
-                                단어장
-                            </PopoverButton>
-                        </>
+                        <PopoverButton
+                            onClick={() =>
+                                storyId != null
+                                    ? navigate(`/tale/read/${storyId}`)
+                                    : navigate("/tale/read")
+                            }
+                        >
+                            읽기
+                        </PopoverButton>
                     )}
                 </CardPopover>
             )}
@@ -326,12 +322,6 @@ const PopoverButton = styled.button<{ $danger?: boolean }>`
     &:hover {
         background: #f5f5f5;
     }
-`;
-
-const PopoverDivider = styled.div`
-    width: 1px;
-    height: 22px;
-    background: #E0E0E0;
 `;
 
 const Overlay = styled.div`
