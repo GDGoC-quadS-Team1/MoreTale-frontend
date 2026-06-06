@@ -195,7 +195,7 @@ const VocabularyPage = () => {
                                 />
                                 <SearchIconImg src={SearchIcon} alt="" />
                             </SearchField>
-                            <LibraryButton onClick={() => navigate("/lib")}>
+                            <LibraryButton onClick={() => navigate("/voca")}>
                                 <LibraryIconImg src={LibraryIcon} alt="" />
                             </LibraryButton>
                         </ToolContainer>

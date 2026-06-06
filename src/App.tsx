@@ -11,6 +11,7 @@ import LoadingPage from './pages/tale/LoadingPage';
 import CompletePage from './pages/tale/CompletePage';
 import ReadPage from './pages/tale/ReadPage';
 import LibraryPage from './pages/library/LibraryPage';
+import VocaListPage from './pages/library/VocaListPage';
 import VocabularyPage from './pages/library/VocabularyPage';
 import QuizListPage from './pages/quiz/QuizListPage';
 import QuizPlayPage from './pages/quiz/QuizPlayPage';
@@ -38,7 +39,8 @@ function App() {
         <Route path="/lib" element={<LibraryPage />} />
 
         {/* VOCA */}
-        <Route path="/voca" element={<VocabularyPage />} />
+        <Route path="/voca" element={<VocaListPage />} />
+        <Route path="/voca/detail" element={<VocabularyPage />} />
 
         {/* QUIZ */}
         <Route path="/quiz" element={<QuizListPage />} />

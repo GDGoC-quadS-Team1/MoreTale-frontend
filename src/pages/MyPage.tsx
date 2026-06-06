@@ -7,7 +7,6 @@ import {
     buildMyPageInfoRows,
     deleteUser,
     getHoneyWarehouseDisplay,
-    getHoneyProgressCollected,
     getMyPage,
     getUsageStatusDisplay,
     HONEY_JARS_PER_STORY,
