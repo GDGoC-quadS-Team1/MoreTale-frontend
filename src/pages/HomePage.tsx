@@ -97,26 +97,20 @@ export default HomePage;
 const Wrapper = styled.div<{ $bg?: string }>`
     background: ${({ $bg }) => $bg ?? "#FFDE21"};
     transition: background 0.3s ease;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
     width: 100%;
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-start;
 `;
 
 const Container = styled.div`
     width: 100%;
     max-width: 100%;
-    flex: 1;
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
-    overflow: visible;
 `;
 
 const Content = styled.div<{ $flushRight?: boolean }>`

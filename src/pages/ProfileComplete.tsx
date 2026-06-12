@@ -2,12 +2,14 @@ import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import Slogan from "../components/Slogan";
 import YellowButton from "../components/YellowButton";
+import { getProfileId } from "../lib/auth";
 
 const ProfileComplete = () => {
     const navigate = useNavigate();
 
     const goToTale = () => {
-        navigate("/tale/complete");
+        const profileId = getProfileId();
+        navigate("/tale/complete", profileId != null ? { state: { profileId } } : undefined);
     };
 
     const goToHome = () => {
@@ -43,12 +45,9 @@ export default ProfileComplete;
 
 const Wrapper = styled.div`
     background: #FFDE21;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
     width: 100%;
+    min-width: 1200px;
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
     align-items: center;

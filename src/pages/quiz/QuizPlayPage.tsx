@@ -1,19 +1,26 @@
-import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import styled from "styled-components";
 import Header from "../../components/Header";
 import PencilIcon from "../../assets/images/tale/pencil.svg";
 import ArrowLeftIcon from "../../assets/images/tale/arrow-left.svg";
 import ArrowRightIcon from "../../assets/images/tale/arrow-right.svg";
-import QuizScoreImg from "../../assets/images/quiz-score.png";
+import QuizScoreImg from "../../assets/images/tale/quiz-score.png";
+import {
+    getQuizByStoryId,
+    submitQuiz,
+    type QuizQuestionDto,
+    type QuizSubmitData,
+} from "../../apis/quiz";
 
 type QuizOption = {
-    kanji: string;
-    furigana: string;
-    koreanReading: string;
+    label: string;
+    value: string;
 };
 
 type QuizQuestion = {
+    questionId: number;
+    questionType: "MULTIPLE_CHOICE" | "TRUE_FALSE";
     prompt: string;
     points: number;
     options: QuizOption[];
@@ -27,100 +34,142 @@ const COLOR_WRONG = "#ED9192";
 const OPTION_DEFAULT = "#FFF6C7";
 const OPTION_SELECTED = "#FEE762";
 
-// 퀴즈 더미 데이터
-const QUESTIONS: QuizQuestion[] = [
-    {
-        prompt: "소년이 달을 따러 간 이유는 무엇인가요?",
-        points: 10,
-        options: [
-            { kanji: "遊び", furigana: "あそび", koreanReading: "아소비" },
-            { kanji: "願い", furigana: "ねがい", koreanReading: "네가이" },
-            { kanji: "約束", furigana: "やくそく", koreanReading: "야쿠소쿠" },
-            { kanji: "夢", furigana: "ゆめ", koreanReading: "유메" },
-        ],
-        correctIndex: 1,
-    },
-    {
-        prompt: "달로 가는 길에 소년이 만난 것은 무엇인가요?",
-        points: 10,
-        options: [
-            { kanji: "風", furigana: "かぜ", koreanReading: "카제" },
-            { kanji: "雲", furigana: "くも", koreanReading: "쿠모" },
-            { kanji: "鳥", furigana: "とり", koreanReading: "도리" },
-            { kanji: "花", furigana: "はな", koreanReading: "하나" },
-        ],
-        correctIndex: 2,
-    },
-    {
-        prompt: "달에 도착했을 때 가장 먼저 본 것은 무엇인가요?",
-        points: 15,
-        options: [
-            { kanji: "光", furigana: "ひかり", koreanReading: "히카리" },
-            { kanji: "影", furigana: "かげ", koreanReading: "카게" },
-            { kanji: "海", furigana: "うみ", koreanReading: "우미" },
-            { kanji: "森", furigana: "もり", koreanReading: "모리" },
-        ],
-        correctIndex: 0,
-    },
-    {
-        prompt: "소년이 달에서 가장 좋아한 시간은 언제였나요?",
-        points: 15,
-        options: [
-            { kanji: "朝", furigana: "あさ", koreanReading: "아사" },
-            { kanji: "昼", furigana: "ひる", koreanReading: "히루" },
-            { kanji: "夕", furigana: "ゆう", koreanReading: "유우" },
-            { kanji: "夜", furigana: "よる", koreanReading: "요루" },
-        ],
-        correctIndex: 3,
-    },
-    {
-        prompt: "소년은 달에 앉아 무엇과 친구가 되었나요?",
-        points: 20,
-        options: [
-            { kanji: "星", furigana: "ほし", koreanReading: "호시" },
-            { kanji: "空", furigana: "そら", koreanReading: "소라" },
-            { kanji: "少女", furigana: "しょうじょ", koreanReading: "쇼-죠" },
-            { kanji: "夜", furigana: "よる", koreanReading: "요루" },
-        ],
-        correctIndex: 0,
-    },
-    {
-        prompt: "이야기의 마지막에 소년은 무엇을 가져왔나요?",
-        points: 30,
-        options: [
-            { kanji: "砂", furigana: "すな", koreanReading: "스나" },
-            { kanji: "欠片", furigana: "かけら", koreanReading: "카케라" },
-            { kanji: "温もり", furigana: "ぬくもり", koreanReading: "누쿠모리" },
-            { kanji: "約束", furigana: "やくそく", koreanReading: "야쿠소쿠" },
-        ],
-        correctIndex: 2,
-    },
-];
+function mapQuizQuestions(questions: QuizQuestionDto[]): QuizQuestion[] {
+    return questions.map((q) => {
+        if (q.questionType === "TRUE_FALSE") {
+            return {
+                questionId: q.questionId,
+                questionType: q.questionType,
+                prompt: q.questionText,
+                points: 10,
+                options: [
+                    { label: "", value: "TRUE" },
+                    { label: "", value: "FALSE" },
+                ],
+                correctIndex: -1,
+            };
+        }
+
+        const sortedOptions = q.options
+            .slice()
+            .sort((a, b) => a.optionOrder - b.optionOrder);
+
+        const correctOrder = Number(q.correctAnswer);
+        const correctIndex = !Number.isNaN(correctOrder)
+            ? sortedOptions.findIndex((opt) => opt.optionOrder === correctOrder)
+            : -1;
+
+        return {
+            questionId: q.questionId,
+            questionType: q.questionType,
+            prompt: q.questionText,
+            points: 10,
+            options: sortedOptions.map((opt) => ({
+                label: opt.optionText,
+                value: String(opt.optionOrder),
+            })),
+            correctIndex: correctIndex >= 0 ? correctIndex : -1,
+        };
+    });
+}
 
 const QuizPlayPage = () => {
     const navigate = useNavigate();
-    const total = QUESTIONS.length;
+    const location = useLocation();
+    const [searchParams] = useSearchParams();
+
+    const storyIdFromQuery = Number(searchParams.get("storyId"));
+    const storyIdFromState = Number((location.state as { storyId?: number } | null)?.storyId);
+    const storyId = Number.isFinite(storyIdFromQuery) && storyIdFromQuery > 0
+        ? storyIdFromQuery
+        : Number.isFinite(storyIdFromState) && storyIdFromState > 0
+            ? storyIdFromState
+            : null;
+
+    const [bookTitle] = useState(
+        (location.state as { title?: string } | null)?.title ?? BOOK_TITLE,
+    );
+    const [quizId, setQuizId] = useState<number | null>(null);
+    const [questions, setQuestions] = useState<QuizQuestion[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const total = questions.length;
 
     const [currentIndex, setCurrentIndex] = useState(0);
-    const [selections, setSelections] = useState<(number | null)[]>(() => Array.from({ length: total }, () => null));
+    const [selections, setSelections] = useState<(number | null)[]>([]);
     const [submitted, setSubmitted] = useState(false);
     const [showResultScreen, setShowResultScreen] = useState(false);
     const [reviewMode, setReviewMode] = useState(false);
+    const [submitResult, setSubmitResult] = useState<QuizSubmitData | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (total === 0) {
+            setSelections([]);
+            return;
+        }
+        setSelections(Array.from({ length: total }, () => null));
+        setCurrentIndex(0);
+        setSubmitted(false);
+        setShowResultScreen(false);
+        setReviewMode(false);
+        setSubmitResult(null);
+        setIsSubmitting(false);
+        setSubmitError(null);
+    }, [total]);
+
+    useEffect(() => {
+        if (storyId == null) {
+            setError("storyId가 없어 퀴즈를 불러올 수 없습니다.");
+            setLoading(false);
+            return;
+        }
+
+        const fetchQuiz = async () => {
+            try {
+                setLoading(true);
+                setError(null);
+                const { data } = await getQuizByStoryId(storyId);
+                setQuizId(data.quizId);
+                setQuestions(mapQuizQuestions(data.questions));
+            } catch {
+                setError("퀴즈를 불러오지 못했습니다.");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        void fetchQuiz();
+    }, [storyId]);
 
     const allAnswered = useMemo(() => selections.every((s) => s !== null), [selections]);
 
+    const answerResultMap = useMemo(() => {
+        return new Map(submitResult?.answerResults.map((result) => [result.questionId, result]) ?? []);
+    }, [submitResult]);
+
     const correctness = useMemo(() => {
-        return selections.map((choice, i) =>
-            choice === null ? null : choice === QUESTIONS[i].correctIndex,
-        );
-    }, [selections]);
+        if (!submitted) {
+            return Array.from({ length: total }, () => null);
+        }
+        return questions.map((question) => {
+            const result = answerResultMap.get(question.questionId);
+            return typeof result?.isCorrect === "boolean" ? result.isCorrect : null;
+        });
+    }, [submitted, total, questions, answerResultMap]);
 
     const totalScore = useMemo(() => {
-        return QUESTIONS.reduce((sum, q, i) => {
-            if (correctness[i]) return sum + q.points;
-            return sum;
-        }, 0);
-    }, [correctness]);
+        return submitResult?.score ?? 0;
+    }, [submitResult]);
+
+    const getCorrectIndex = (slideIdx: number): number => {
+        const question = questions[slideIdx];
+        if (!question) return -1;
+        const result = answerResultMap.get(question.questionId);
+        if (!result?.correctAnswer) return -1;
+        return question.options.findIndex((option) => option.value === result.correctAnswer);
+    };
 
     const getOptionBackground = (slideIdx: number, idx: number): string => {
         const chosen = selections[slideIdx] === idx;
@@ -128,7 +177,7 @@ const QuizPlayPage = () => {
             return chosen ? OPTION_SELECTED : OPTION_DEFAULT;
         }
         const sel = selections[slideIdx];
-        const cor = QUESTIONS[slideIdx].correctIndex;
+        const cor = getCorrectIndex(slideIdx);
         if (sel === null) return OPTION_DEFAULT;
         const gotRight = sel === cor;
         if (gotRight) {
@@ -140,12 +189,47 @@ const QuizPlayPage = () => {
     };
 
     const selectOption = (optionIndex: number) => {
-        if (submitted) return;
+        if (submitted || isSubmitting) return;
         setSelections((prev) => {
             const next = [...prev];
             next[currentIndex] = optionIndex;
             return next;
         });
+    };
+
+    const submitAnswers = async () => {
+        if (quizId == null) {
+            setSubmitError("퀴즈 ID를 찾지 못해 제출할 수 없습니다.");
+            return;
+        }
+
+        try {
+            setIsSubmitting(true);
+            setSubmitError(null);
+
+            const answers = questions.map((question, questionIndex) => {
+                const selectedIndex = selections[questionIndex];
+                const selectedOption = selectedIndex != null ? question.options[selectedIndex] : null;
+                return {
+                    questionId: question.questionId,
+                    submittedAnswer: selectedOption?.value ?? "",
+                };
+            });
+
+            const { data } = await submitQuiz({
+                quizId,
+                answers,
+            });
+
+            setSubmitResult(data);
+            setSubmitted(true);
+            setShowResultScreen(true);
+            setReviewMode(false);
+        } catch {
+            setSubmitError("퀴즈 제출에 실패했습니다. 잠시 후 다시 시도해주세요.");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const isFirstSlide = currentIndex === 0;
@@ -162,11 +246,10 @@ const QuizPlayPage = () => {
     };
 
     const handleRightClick = () => {
-        if (showResultScreen) return;
+        if (showResultScreen || isSubmitting) return;
         if (isLastSlide) {
             if (allAnswered) {
-                setSubmitted(true);
-                setShowResultScreen(true);
+                void submitAnswers();
             }
             return;
         }
@@ -179,7 +262,7 @@ const QuizPlayPage = () => {
         setCurrentIndex(0);
     };
 
-    const progressCells = QUESTIONS.map((_, i) => {
+    const progressCells = questions.map((_, i) => {
         const num = i + 1;
         if (submitted && correctness[i] !== null) {
             return { num, variant: correctness[i] ? ("correct" as const) : ("wrong" as const) };
@@ -188,7 +271,7 @@ const QuizPlayPage = () => {
     });
 
     const leftDisabled = showResultScreen ? false : isFirstSlide;
-    const rightDisabled = showResultScreen ? true : isLastSlide ? !allAnswered : false;
+    const rightDisabled = showResultScreen ? true : isLastSlide ? !allAnswered || isSubmitting : false;
 
     return (
         <Wrapper>
@@ -196,7 +279,7 @@ const QuizPlayPage = () => {
             <Container>
                 <InfoContainer>
                     <LeftContainer>
-                        <Title>{BOOK_TITLE}</Title>
+                        <Title>{bookTitle}</Title>
                         <PencilIconImg src={PencilIcon} alt="" />
                     </LeftContainer>
                     <RightContainer>
@@ -230,13 +313,19 @@ const QuizPlayPage = () => {
                         <NavIcon height={26} src={ArrowRightIcon} alt="" />
                     </NavButton>
 
-                    {showResultScreen ? (
+                    {loading ? (
+                        <StatusMessage>퀴즈를 불러오는 중...</StatusMessage>
+                    ) : error ? (
+                        <StatusMessage>{error}</StatusMessage>
+                    ) : total === 0 ? (
+                        <StatusMessage>퀴즈 문항이 없습니다.</StatusMessage>
+                    ) : showResultScreen ? (
                         <ResultViewport>
                             <ResultBody>
                                 <ResultText>
-                                    &lt;{BOOK_TITLE}&gt; 퀴즈를 모두 풀었어요!
+                                    &lt;{bookTitle}&gt; 퀴즈를 모두 풀었어요!
                                     <br />
-                                    틀린 문제를 다시 보거나, 다른 퀴즈에 도전해보세요
+                                    문제를 다시 보거나, 다른 퀴즈에 도전해보세요
                                 </ResultText>
                                 <ScoreContainer>
                                     <ScoreBackgroundImg src={QuizScoreImg} alt="" />
@@ -244,50 +333,70 @@ const QuizPlayPage = () => {
                                 </ScoreContainer>
                                 <ResultButtonRow>
                                     <YellowButton onClick={handleWrongReviewClick}>
-                                        오답 보기
+                                        다시 보기
                                     </YellowButton>
                                     <YellowButton onClick={() => navigate("/quiz")}>
                                         퀴즈 홈으로
                                     </YellowButton>
                                 </ResultButtonRow>
+                                {submitError && <SubmitErrorText>{submitError}</SubmitErrorText>}
                             </ResultBody>
                         </ResultViewport>
                     ) : (
                         <SlideViewport>
                             <SlideTrack $count={total} $index={currentIndex}>
-                                {QUESTIONS.map((q, slideIdx) => (
-                                    <SlidePane key={slideIdx} $count={total} $inactive={slideIdx !== currentIndex}>
+                                {questions.map((q, slideIdx) => (
+                                    <SlidePane key={q.questionId} $count={total} $inactive={slideIdx !== currentIndex}>
                                         <QuizContainer>
                                             <QuestionText>
-                                                {slideIdx + 1}. {q.prompt} ({q.points}점)
+                                                {slideIdx + 1}. {q.prompt}
                                             </QuestionText>
-                                            <OptionsGrid>
-                                                {q.options.map((opt, idx) => {
-                                                    const chosen = selections[slideIdx] === idx;
-                                                    const bg = getOptionBackground(slideIdx, idx);
-                                                    return (
-                                                        <OptionButton
-                                                            key={idx}
-                                                            type="button"
-                                                            $bg={bg}
-                                                            onClick={() => {
-                                                                if (slideIdx !== currentIndex) return;
-                                                                selectOption(idx);
-                                                            }}
-                                                            disabled={submitted}
-                                                            aria-pressed={chosen}
-                                                        >
-                                                            <RubyWrap>
-                                                                <ruby>
-                                                                    {opt.kanji}
-                                                                    <rt>{opt.furigana}</rt>
-                                                                </ruby>
-                                                            </RubyWrap>
-                                                            <KoreanWord>{opt.koreanReading}</KoreanWord>
-                                                        </OptionButton>
-                                                    );
-                                                })}
-                                            </OptionsGrid>
+                                            {q.questionType === "TRUE_FALSE" ? (
+                                                <TrueFalseGrid>
+                                                    {q.options.map((opt, idx) => {
+                                                        const chosen = selections[slideIdx] === idx;
+                                                        const bg = getOptionBackground(slideIdx, idx);
+                                                        return (
+                                                            <TrueFalseButton
+                                                                key={idx}
+                                                                type="button"
+                                                                $bg={bg}
+                                                                onClick={() => {
+                                                                    if (slideIdx !== currentIndex) return;
+                                                                    selectOption(idx);
+                                                                }}
+                                                                disabled={submitted || isSubmitting}
+                                                                aria-pressed={chosen}
+                                                            >
+                                                                <TrueFalseBadge>{idx === 0 ? "O" : "X"}</TrueFalseBadge>
+                                                                <OptionText>{opt.label}</OptionText>
+                                                            </TrueFalseButton>
+                                                        );
+                                                    })}
+                                                </TrueFalseGrid>
+                                            ) : (
+                                                <OptionsGrid>
+                                                    {q.options.map((opt, idx) => {
+                                                        const chosen = selections[slideIdx] === idx;
+                                                        const bg = getOptionBackground(slideIdx, idx);
+                                                        return (
+                                                            <OptionButton
+                                                                key={idx}
+                                                                type="button"
+                                                                $bg={bg}
+                                                                onClick={() => {
+                                                                    if (slideIdx !== currentIndex) return;
+                                                                    selectOption(idx);
+                                                                }}
+                                                                disabled={submitted || isSubmitting}
+                                                                aria-pressed={chosen}
+                                                            >
+                                                                <OptionText>{opt.label}</OptionText>
+                                                            </OptionButton>
+                                                        );
+                                                    })}
+                                                </OptionsGrid>
+                                            )}
                                         </QuizContainer>
                                     </SlidePane>
                                 ))}
@@ -304,12 +413,9 @@ export default QuizPlayPage;
 
 const Wrapper = styled.div`
     background: #FFDE21;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
     width: 100%;
+    min-width: 1200px;
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -514,12 +620,13 @@ const QuizContainer = styled.div`
     padding: 60px;
     display: flex;
     flex-direction: column;
-    align-items: stretch;
-    gap: 40px;
+    align-items: center;
+    gap: 48px;
 `;
 
 const QuestionText = styled.p`
     margin: 0;
+    align-self: flex-start;
     color: #000000;
     font-size: 32px;
     font-style: normal;
@@ -574,6 +681,7 @@ const OptionsGrid = styled.div`
 `;
 
 const OptionButton = styled.button<{ $bg: string }>`
+    min-width: 380px;
     min-height: 140px;
     border-radius: 10px;
     border: none;
@@ -597,28 +705,46 @@ const OptionButton = styled.button<{ $bg: string }>`
     }
 `;
 
-const RubyWrap = styled.span`
-    font-size: 48px;
-    font-weight: 800;
-    color: #1F1F1F;
-    line-height: 45px;
-
-    ruby {
-        ruby-align: center;
-    }
-
-    rt {
-        font-size: 12px;
-        font-weight: 600;
-        color: #424242;
-        margin-bottom: 4px;
-    }
-`;
-
-const KoreanWord = styled.span`
-    font-size: 32px;
+const OptionText = styled.span`
+    font-size: 28px;
     font-weight: 800;
     color: #505050;
+    text-align: center;
+`;
+
+const TrueFalseGrid = styled.div`
+    display: flex;
+    flex-direction: row;
+    gap: 40px;
+`;
+
+const TrueFalseButton = styled(OptionButton)`
+    min-height: 180px;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 0;
+`;
+
+const TrueFalseBadge = styled.span`
+    color: #424242;
+    font-size: 60px;
+    font-weight: 800;
+`;
+
+const StatusMessage = styled.div`
+    width: 100%;
+    text-align: center;
+    color: #424242;
+    font-size: 24px;
+    font-weight: 700;
+`;
+
+const SubmitErrorText = styled.div`
+    color: #D14343;
+    font-size: 20px;
+    font-weight: 700;
+    text-align: center;
 `;
 
 const YellowButton = styled.button`

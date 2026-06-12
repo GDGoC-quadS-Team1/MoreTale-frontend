@@ -1,18 +1,55 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import Header from "../../components/Header";
 import YellowButton from "../../components/YellowButton";
+import type { TaleFlowLocationState } from "../../apis/tale";
 
 const PromptPage = () => {
     const navigate = useNavigate();
+    const [prompt, setPrompt] = useState("");
+    const [error, setError] = useState<string | null>(null);
+
+    const handleSubmit = () => {
+        const trimmed = prompt.trim();
+
+        if (!trimmed) {
+            window.alert(
+                "만들고 싶은 이야기에 대해 작성해 주세요!",
+            );
+            return;
+        }
+
+        setError(null);
+        navigate("/tale/language", {
+            state: { prompt: trimmed } satisfies TaleFlowLocationState,
+        });
+    };
 
     return (
         <Wrapper>
             <Header activeMenu="tale" />
             <Container>
                 <Title>만들고 싶은 이야기에 대해 알려주세요!</Title>
-                <TextInput placeholder="이곳을 클릭해 입력해주세요." />
-                <YellowButton type="button" width={195} height={63} fontSize={30} borderRadius={5} onClick={() => navigate("/tale/language")}>
+                <InputWrap>
+                    <TextInput
+                        placeholder="이곳을 클릭해 입력해주세요."
+                        value={prompt}
+                        onChange={(e) => {
+                            setPrompt(e.target.value);
+                            if (error) setError(null);
+                        }}
+                    />
+                    {error && <ErrorText>{error}</ErrorText>}
+                </InputWrap>
+                <YellowButton
+                    type="button"
+                    width={195}
+                    height={63}
+                    fontSize={30}
+                    borderRadius={5}
+                    onClick={handleSubmit}
+                >
                     다 적었어요
                 </YellowButton>
             </Container>
@@ -24,12 +61,9 @@ export default PromptPage;
 
 const Wrapper = styled.div`
     background: #FFDE21;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
     width: 100%;
+    min-width: 1200px;
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -46,6 +80,7 @@ const Container = styled.div`
     align-items: center;
     justify-content: center;
     gap: 72px;
+    padding: 20px 0;
 `;
 
 const Title = styled.div`
@@ -56,6 +91,13 @@ const Title = styled.div`
     font-weight: 800;
     line-height: 45px;
     cursor: default;
+`;
+
+const InputWrap = styled.div`
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
 `;
 
 const TextInput = styled.textarea`
@@ -77,4 +119,13 @@ const TextInput = styled.textarea`
     cursor: text;
     vertical-align: top;
     text-align: left;
+`;
+
+const ErrorText = styled.p`
+    margin: 0;
+    color: #F02828;
+    font-size: 16px;
+    font-weight: 600;
+    text-align: center;
+    max-width: 740px;
 `;

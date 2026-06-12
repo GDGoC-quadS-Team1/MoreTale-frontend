@@ -13,10 +13,10 @@ import {
 const PAGE_SIZE = 10; // 한 페이지당 동화 수
 
 const SORT_OPTIONS = [
-    { value: "created-desc", label: "최신순" },
-    { value: "created-asc", label: "오래된순" },
-    { value: "title-asc", label: "가나다순" },
-] as const;
+    { value: "created-desc" as const, label: "최신순" },
+    { value: "created-asc" as const, label: "오래된순" },
+    { value: "title-asc" as const, label: "가나다순" },
+];
 
 function formatCreatedAt(iso: string): string {
     const d = new Date(iso);
@@ -27,7 +27,7 @@ function formatCreatedAt(iso: string): string {
     return `${y}.${m}.${day}.`;
 }
 
-const QuizListPage = () => {
+const VocaListPage = () => {
     const [sortOpen, setSortOpen] = useState(false);
     const [sortValue, setSortValue] = useState<LibrarySortKey>("created-desc");
     const [stories, setStories] = useState<LibraryStoryItem[]>([]);
@@ -107,7 +107,7 @@ const QuizListPage = () => {
 
     return (
         <Wrapper>
-            <Header activeMenu="quiz" />
+            <Header activeMenu="voca" />
             <Container>
                 <Content>
                     <SortContainer>
@@ -145,8 +145,9 @@ const QuizListPage = () => {
                             <FilterIconImg src={ListSearchIcon} alt="" />
                         </FilterIcon>
                     </SortContainer>
+
                     {loading ? (
-                        <StatusMessage>로딩 중...</StatusMessage>
+                        <StatusMessage>불러오는 중...</StatusMessage>
                     ) : error ? (
                         <StatusMessage>{error}</StatusMessage>
                     ) : stories.length === 0 ? (
@@ -163,7 +164,7 @@ const QuizListPage = () => {
                                         coverSrc={story.thumbnail}
                                         primaryLanguage={story.primaryLanguage}
                                         secondaryLanguage={story.secondaryLanguage}
-                                        listVariant="quiz"
+                                        listVariant="voca"
                                         onDelete={handleDelete}
                                     />
                                 ))}
@@ -185,7 +186,7 @@ const QuizListPage = () => {
     );
 };
 
-export default QuizListPage;
+export default VocaListPage;
 
 const Wrapper = styled.div`
     background: #FFDE21;

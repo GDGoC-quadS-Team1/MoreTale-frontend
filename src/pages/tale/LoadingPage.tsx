@@ -3,15 +3,144 @@ import { useNavigate } from "react-router-dom";
 import styled, { keyframes } from "styled-components";
 import Header from "../../components/Header";
 import LoadingImage from "../../assets/images/tale/loading.png";
+import { generateStory, getGenerationJobResult } from "../../apis/stories";
+import { getMyPage } from "../../apis/user";
+import {
+    buildGenerateStoryRequest,
+    getStoryInit,
+} from "../../apis/tale";
+import { setProfileId } from "../../lib/auth";
+import {
+    loadTaleGenerationSession,
+    saveTaleGenerationSession,
+    type TaleGenerationSession,
+} from "../../lib/taleGenerationSession";
+
+const POLL_INTERVAL_MS = 2500;
+const MAX_POLL_DURATION_MS = 10 * 60 * 1000;
 
 const LoadingPage = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        const timer = setTimeout(() => {
-            navigate("/tale/complete");
-        }, 3000);
-        return () => clearTimeout(timer);
+        const initialSession = loadTaleGenerationSession();
+        if (!initialSession?.prompt) {
+            navigate("/tale/prompt", { replace: true });
+            return;
+        }
+
+        if (!initialSession.primaryLanguage || !initialSession.secondaryLanguage) {
+            navigate("/tale/language", {
+                replace: true,
+                state: { prompt: initialSession.prompt },
+            });
+            return;
+        }
+
+        let cancelled = false;
+        let session: TaleGenerationSession = initialSession;
+
+        const goToLanguageWithError = (message: string) => {
+            navigate("/tale/language", {
+                replace: true,
+                state: {
+                    prompt: session.prompt,
+                    generationError: message,
+                },
+            });
+        };
+
+        /** 1단계: POST /api/stories/generate */
+        const startGeneration = async (): Promise<string | null> => {
+            if (session.jobId) {
+                return session.jobId;
+            }
+
+            const { data: myPage } = await getMyPage();
+            const profile = myPage.profiles[0];
+            if (!profile) {
+                goToLanguageWithError("로그인 후 다시 시도해 주세요.");
+                return null;
+            }
+
+            setProfileId(profile.profileId);
+
+            const { data: init } = await getStoryInit(profile.profileId);
+            const body = buildGenerateStoryRequest(
+                profile,
+                init,
+                session.prompt,
+                session.primaryLanguage,
+                session.secondaryLanguage,
+            );
+
+            const { data: job } = await generateStory(body);
+
+            session = {
+                ...session,
+                jobId: job.jobId,
+                profileId: profile.profileId,
+            };
+            saveTaleGenerationSession(session);
+            return job.jobId;
+        };
+
+        /** 2단계: GET .../generation-jobs/{jobId}/result (409면 재시도) */
+        const pollResult = async (jobId: string) => {
+            const startedAt = session.generationStartedAt;
+
+            while (!cancelled) {
+                if (Date.now() - startedAt > MAX_POLL_DURATION_MS) {
+                    goToLanguageWithError(
+                        "동화 생성 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.",
+                    );
+                    return;
+                }
+
+                try {
+                    const result = await getGenerationJobResult(jobId);
+
+                    if (result?.slides.length) {
+                        saveTaleGenerationSession({
+                            ...session,
+                            result,
+                        });
+                        navigate("/tale/complete", {
+                            state: { profileId: session.profileId },
+                            replace: true,
+                        });
+                        return;
+                    }
+                } catch {
+                    goToLanguageWithError(
+                        "동화 결과를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.",
+                    );
+                    return;
+                }
+
+                await new Promise((resolve) =>
+                    window.setTimeout(resolve, POLL_INTERVAL_MS),
+                );
+            }
+        };
+
+        (async () => {
+            try {
+                const jobId = await startGeneration();
+                if (!jobId || cancelled) return;
+                await pollResult(jobId);
+            } catch {
+                if (!cancelled) {
+                    goToLanguageWithError(
+                        "동화 생성을 시작하지 못했습니다. 잠시 후 다시 시도해주세요.",
+                    );
+                }
+            }
+        })();
+
+        return () => {
+            cancelled = true;
+        };
     }, [navigate]);
 
     return (
@@ -34,12 +163,9 @@ export default LoadingPage;
 
 const Wrapper = styled.div`
     background: #FFDE21;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
     width: 100%;
+    min-width: 1200px;
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -56,7 +182,7 @@ const Container = styled.div`
     align-items: center;
     justify-content: center;
     gap: 32px;
-    padding-bottom: 40px;
+    padding: 20px 0;
 `;
 
 const Title = styled.div`

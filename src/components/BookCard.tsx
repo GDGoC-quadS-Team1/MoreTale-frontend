@@ -1,28 +1,37 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
-import bookCoverEx from "../assets/images/tale/book-cover-ex.png";
 import koreaFlag from "../assets/images/tale/flag/korea.png";
-import japanFlag from "../assets/images/tale/flag/japan.png";
 import wordIcon from "../assets/images/icon/word.svg";
 import moreIcon from "../assets/images/icon/more.svg";
+import { languageCodeToFlag } from "../apis/tale";
 
-export type BookCardListVariant = "library" | "quiz";
+export type BookCardListVariant = "library" | "voca" | "quiz";
 
 export interface BookCardProps {
+    storyId?: number;
     title?: string;
     date?: string;
     coverSrc?: string;
-    /* 카드 클릭 시 버튼 : library → [읽기 | 단어장], quiz → [퀴즈 풀기] */
+    primaryLanguage?: string;
+    secondaryLanguage?: string;
+    /* 카드 클릭 시 버튼 : library → [읽기], voca → [단어장], quiz → [퀴즈 풀기] */
     listVariant?: BookCardListVariant;
+    onDelete?: (storyId: number) => void | Promise<void>;
 }
 
 const BookCard = ({
-    title = "달을 따라 간 소년",
-    date = "2026.03.29.",
-    coverSrc = bookCoverEx,
+    storyId,
+    title,
+    date,
+    coverSrc,
+    primaryLanguage,
+    secondaryLanguage,
     listVariant = "library",
+    onDelete,
 }: BookCardProps) => {
+    const primaryFlag = primaryLanguage ? languageCodeToFlag(primaryLanguage) : koreaFlag;
+    const secondaryFlag = secondaryLanguage ? languageCodeToFlag(secondaryLanguage) : undefined;
     const navigate = useNavigate();
     const [cardPopover, setCardPopover] = useState(false);
     const [morePopover, setMorePopover] = useState(false);
@@ -45,10 +54,27 @@ const BookCard = ({
         setMorePopover((prev) => !prev);
     };
 
+    const handleDeleteClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setMorePopover(false);
+        if (storyId == null || !onDelete) return;
+        void onDelete(storyId);
+    };
+
+    const navigateToVocabulary = () => {
+        if (storyId != null) {
+            navigate(`/voca/detail?storyId=${storyId}`, {
+                state: { title, coverSrc, primaryLanguage, secondaryLanguage },
+            });
+        } else {
+            navigate("/voca/detail");
+        }
+    };
+
     return (
         <Card ref={cardRef} onClick={() => { setMorePopover(false); setCardPopover((prev) => !prev); }}>
             <CardContent>
-                <Cover src={coverSrc} alt="" />
+                {coverSrc ? <Cover src={coverSrc} alt="" /> : null}
                 <Body>
                     {/* 제목 & 더보기 버튼 */}
                     <TitleRow>
@@ -60,16 +86,24 @@ const BookCard = ({
 
                     {/* 언어 */}
                     <Flags>
-                        <Flag src={koreaFlag} alt="한국어" />
-                        <Flag src={japanFlag} alt="日本語" />
+                        {primaryFlag ? <Flag src={primaryFlag} alt="" /> : null}
+                        {secondaryFlag ? <Flag src={secondaryFlag} alt="" /> : null}
                     </Flags>
 
                     {/* 생성일 & 단어장 */}
                     <Footer>
                         <DateText>{date}</DateText>
-                        <WordButton type="button" onClick={() => navigate("/voca")}>
-                            <WordIcon src={wordIcon} alt="" />
-                        </WordButton>
+                        {listVariant === "quiz" ? (
+                            <WordButton
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigateToVocabulary();
+                                }}
+                            >
+                                <WordIcon src={wordIcon} alt="" />
+                            </WordButton>
+                        ) : null}
                     </Footer>
                 </Body>
             </CardContent>
@@ -79,17 +113,35 @@ const BookCard = ({
                 <Overlay onClick={(e) => e.stopPropagation()} />
             )}
 
-            {/* [팝오버] library → [읽기 | 단어장], quiz → [퀴즈 풀기] */}
+            {/* [팝오버] library → [읽기], voca → [단어장], quiz → [퀴즈 풀기] */}
             {cardPopover && (
                 <CardPopover onClick={(e) => e.stopPropagation()}>
                     {listVariant === "quiz" ? (
-                        <PopoverButton onClick={() => navigate("/quiz/play")}>퀴즈 풀기</PopoverButton>
+                        <PopoverButton
+                            onClick={() =>
+                                storyId != null
+                                    ? navigate(`/quiz/play?storyId=${storyId}`, {
+                                        state: { storyId, title },
+                                    })
+                                    : navigate("/quiz/play")
+                            }
+                        >
+                            퀴즈 풀기
+                        </PopoverButton>
+                    ) : listVariant === "voca" ? (
+                        <PopoverButton onClick={navigateToVocabulary}>
+                            단어장
+                        </PopoverButton>
                     ) : (
-                        <>
-                            <PopoverButton onClick={() => navigate("/tale/read")}>읽기</PopoverButton>
-                            <PopoverDivider />
-                            <PopoverButton onClick={() => navigate("/voca")}>단어장</PopoverButton>
-                        </>
+                        <PopoverButton
+                            onClick={() =>
+                                storyId != null
+                                    ? navigate(`/tale/read/${storyId}`)
+                                    : navigate("/tale/read")
+                            }
+                        >
+                            읽기
+                        </PopoverButton>
                     )}
                 </CardPopover>
             )}
@@ -97,7 +149,12 @@ const BookCard = ({
             {/* [팝오버] 삭제 */}
             {morePopover && (
                 <MorePopover onClick={(e) => e.stopPropagation()}>
-                    <PopoverButton $danger>삭제</PopoverButton>
+                    <PopoverButton
+                        $danger
+                        onClick={onDelete ? handleDeleteClick : undefined}
+                    >
+                        삭제
+                    </PopoverButton>
                 </MorePopover>
             )}
         </Card>
@@ -128,10 +185,10 @@ const CardContent = styled.div`
     flex-direction: column;
     flex: 1;
     overflow: hidden;
-    border-radius: 0 0 5px 5px;
 `;
 
 const Cover = styled.img`
+    flex: 1.5;
     width: 100%;
     height: auto;
     object-fit: cover;
@@ -139,21 +196,22 @@ const Cover = styled.img`
 `;
 
 const Body = styled.div`
+    flex: 1;
     padding: 16px 14px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    flex: 1;
+    gap: 8px;
 `;
 
 const TitleRow = styled.div`
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
 `;
 
 const Title = styled.p`
     margin: 0;
+    width: 90%;
     font-size: 16px;
     font-weight: 800;
     color: #424242;
@@ -172,8 +230,8 @@ const MoreButton = styled.button`
 `;
 
 const MoreIcon = styled.img`
-    width: auto;
-    height: 14px;
+    width: 4px;
+    height: auto;
     display: block;
 `;
 
@@ -181,7 +239,6 @@ const Flags = styled.div`
     display: flex;
     align-items: center;
     gap: 2px;
-    margin-bottom: 4px;
 `;
 
 const Flag = styled.img`
@@ -242,8 +299,8 @@ const CardPopover = styled.div`
 
 const MorePopover = styled.div`
     position: absolute;
-    bottom: 48px;
-    right: 12px;
+    bottom: 80px;
+    right: 16px;
     z-index: 10;
     background: #FFFFFF;
     border-radius: 10px;
@@ -265,12 +322,6 @@ const PopoverButton = styled.button<{ $danger?: boolean }>`
     &:hover {
         background: #f5f5f5;
     }
-`;
-
-const PopoverDivider = styled.div`
-    width: 1px;
-    height: 22px;
-    background: #E0E0E0;
 `;
 
 const Overlay = styled.div`
