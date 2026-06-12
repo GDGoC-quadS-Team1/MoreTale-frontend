@@ -14,7 +14,7 @@ const LoginPage = () => {
         const result = consumeOAuthCallback();
         if (!result.handled) return;
 
-        navigate(result.hasProfile ? "/home" : "/signup", { replace: true });
+        navigate(result.hasProfile ? "/home" : "/onboarding", { replace: true });
     }, [navigate]);
 
     const handleLogin = () => {

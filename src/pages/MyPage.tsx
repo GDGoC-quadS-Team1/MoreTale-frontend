@@ -11,7 +11,9 @@ import {
     getUsageStatusDisplay,
     HONEY_JARS_PER_STORY,
     type MyPageData,
+    type MyPageProfile,
 } from "../apis/user";
+import ProfileEditModal from "../components/profile/ProfileEditModal";
 import { clearAuth } from "../lib/auth";
 import ProfileDefault from "../assets/images/mypage/profile-default.svg";
 // import MaleIcon from "../assets/images/mypage/male.svg";
@@ -23,6 +25,7 @@ import HoneyJarFilled from "../assets/images/mypage/honey-jar-filled.png";
 import HoneyJarEmpty from "../assets/images/mypage/honey-jar-empty.png";
 import HoneyJarStand from "../assets/images/mypage/honey-jar-stand.png";
 import UsageBee from "../assets/images/mypage/bee.png";
+import PencilIcon from "../assets/images/tale/pencil.svg";
 
 type SidebarKey = "member" | "honey" | "usage";
 
@@ -42,6 +45,7 @@ const MyPage = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [isWithdrawing, setIsWithdrawing] = useState(false);
+    const [isProfileEditOpen, setIsProfileEditOpen] = useState(false);
 
     const handleWithdraw = async () => {
         if (isWithdrawing) return;
@@ -99,6 +103,18 @@ const MyPage = () => {
     );
 
     const childName = profile?.childName ?? "";
+
+    const handleProfileUpdated = (updatedProfile: MyPageProfile) => {
+        setMyPageData((prev) => {
+            if (!prev) return prev;
+            return {
+                ...prev,
+                profiles: prev.profiles.map((p) =>
+                    p.profileId === updatedProfile.profileId ? updatedProfile : p,
+                ),
+            };
+        });
+    };
 
     if (isLoading) {
         return (
@@ -180,7 +196,16 @@ const MyPage = () => {
                                 </WithdrawButton>
                             </ProfileCard>
 
-                            <SectionTitle>프로필 정보</SectionTitle>
+                            <SectionTitleRow>
+                                <SectionTitle>프로필 정보</SectionTitle>
+                                <EditProfileButton
+                                    type="button"
+                                    onClick={() => setIsProfileEditOpen(true)}
+                                    aria-label="프로필 수정"
+                                >
+                                    <PencilImg src={PencilIcon} alt="" />
+                                </EditProfileButton>
+                            </SectionTitleRow>
 
                             <InfoList>
                                 {infoRows.map((row) => (
@@ -196,10 +221,16 @@ const MyPage = () => {
                                                 ),
                                             )}
                                         </InfoContent>
-                                        <EditButton type="button">정보 수정</EditButton>
                                     </InfoCard>
                                 ))}
                             </InfoList>
+
+                            <ProfileEditModal
+                                profile={profile}
+                                isOpen={isProfileEditOpen}
+                                onClose={() => setIsProfileEditOpen(false)}
+                                onUpdated={handleProfileUpdated}
+                            />
                         </>
                     )}
 
@@ -377,7 +408,7 @@ const ProfileCard = styled.section`
 `;
 
 const ProfileImgContainer = styled.div`
-    padding-bottom: 14px;
+    padding-bottom: 0px;
 `;
 
 const AvatarWrap = styled.div`
@@ -394,6 +425,7 @@ const Avatar = styled.img`
 `;
 
 const PhotoChangeButton = styled.button`
+    display: none;
     position: absolute;
     bottom: 0;
     left: 50%;
@@ -428,7 +460,7 @@ const NameRow = styled.div`
 const Name = styled.p`
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
     margin: 0;
     font-size: 36px;
     font-weight: 900;
@@ -483,11 +515,34 @@ const WithdrawButton = styled.button`
     }
 `;
 
-const SectionTitle = styled.p`
+const SectionTitleRow = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
     margin: 20px 0 0;
+`;
+
+const SectionTitle = styled.p`
+    margin: 0;
     color: #424242;
     font-size: 28px;
     font-weight: 800;
+`;
+
+const EditProfileButton = styled.button`
+    padding: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+`;
+
+const PencilImg = styled.img`
+    width: 22px;
+    height: 22px;
+    display: block;
 `;
 
 const InfoList = styled.div`
@@ -499,7 +554,7 @@ const InfoList = styled.div`
 const InfoCard = styled.article`
     background: #FFFFFF;
     display: grid;
-    grid-template-columns: 160px 1px 1fr auto;
+    grid-template-columns: 160px 1px 1fr;
     align-items: center;
     gap: 40px;
     padding: 24px 40px;
@@ -539,17 +594,6 @@ const StoryTag = styled.p`
     margin: 0;
     color: #DBBB00;
     font-weight: 700;
-`;
-
-const EditButton = styled.button`
-    padding: 0;
-    border: none;
-    background: transparent;
-    color: #738D76;
-    font-size: 16px;
-    font-weight: 800;
-    white-space: nowrap;
-    cursor: pointer;
 `;
 
 const HoneyTitle = styled.h2`

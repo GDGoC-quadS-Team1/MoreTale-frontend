@@ -247,7 +247,6 @@ const VocabularyPage = () => {
                                                     </VocaBlock>
                                                     <SpeakerButton
                                                         type="button"
-                                                        aria-label="발음 듣기"
                                                         onClick={() =>
                                                             speakText(item.word, item.sourceLanguage)
                                                         }
@@ -264,6 +263,14 @@ const VocabularyPage = () => {
                                                             </SecondaryDefinition>
                                                         ) : null}
                                                     </TranslationBlock>
+                                                    <SpeakerButton
+                                                        type="button"
+                                                        onClick={() =>
+                                                            speakText(item.translation, item.targetLanguage)
+                                                        }
+                                                    >
+                                                        <SpeakerImg src={SpeakerIcon} alt="" />
+                                                    </SpeakerButton>
                                                 </Row2>
                                             </CardBody>
                                         </VocaCard>
@@ -563,7 +570,10 @@ const Definition = styled.span`
 const Row2 = styled.div<{ $highlighted?: boolean }>`
     flex: 1;
     display: flex;
+    align-items: center;
+    justify-content: space-between;
     padding: 20px;
+    gap: 20px;
     border-radius: 8px;
     background: ${({ $highlighted }) => ($highlighted ? "#FDEFA4" : "#F4F3F0")};
 `;

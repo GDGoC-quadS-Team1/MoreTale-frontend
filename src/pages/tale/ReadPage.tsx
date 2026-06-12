@@ -4,7 +4,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import styled from "styled-components";
 import Header from "../../components/Header";
 import { getStoryDetail, type StoryDetail, type StoryToken } from "../../apis/stories";
-import { saveVocabulary } from "../../apis/vocabulary";
+import { deleteVocabulary, getVocabulary, saveVocabulary } from "../../apis/vocabulary";
 import {
     completeStory,
     languageCodeToFlag,
@@ -17,7 +17,7 @@ import ArrowRightIcon from "../../assets/images/tale/arrow-right.svg";
 import SpeakerIcon from "../../assets/images/tale/speaker.svg";
 import BookmarkIcon from "../../assets/images/tale/bookmark.svg";
 import LibraryIcon from "../../assets/images/icon/library.svg";
-import SettingIcon from "../../assets/images/icon/setting.svg";
+// import SettingIcon from "../../assets/images/icon/setting.svg";
 import { cancelSpeech, speakText } from "../../lib/speechSynthesis";
 
 type ReadLocationState = {
@@ -118,6 +118,9 @@ const ReadPage = () => {
     const [popoverPlacement, setPopoverPlacement] =
         useState<WordPopoverPlacement>("top");
     const [bookmarkedTokenIds, setBookmarkedTokenIds] = useState<number[]>([]);
+    const [savedVocabularyByTokenId, setSavedVocabularyByTokenId] = useState<
+        Record<number, number>
+    >({});
     const [savingTokenIds, setSavingTokenIds] = useState<number[]>([]);
 
     useEffect(() => {
@@ -161,6 +164,46 @@ const ReadPage = () => {
             cancelled = true;
         };
     }, [storyId, locationState?.startFromLast]);
+
+    useEffect(() => {
+        if (story?.storyId == null) return;
+
+        let cancelled = false;
+
+        (async () => {
+            try {
+                const savedMap: Record<number, number> = {};
+                let page = 0;
+                let hasMore = true;
+
+                while (hasMore && !cancelled) {
+                    const { data } = await getVocabulary({
+                        page,
+                        size: 50,
+                        storyId: story.storyId,
+                    });
+
+                    for (const item of data.content) {
+                        savedMap[item.tokenId] = item.vocabularyId;
+                    }
+
+                    hasMore = !data.last;
+                    page += 1;
+                }
+
+                if (!cancelled) {
+                    setBookmarkedTokenIds(Object.keys(savedMap).map(Number));
+                    setSavedVocabularyByTokenId(savedMap);
+                }
+            } catch {
+                
+            }
+        })();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [story?.storyId]);
 
     const storySlides = useMemo(() => {
         if (!story?.slides.length) return [];
@@ -214,30 +257,51 @@ const ReadPage = () => {
         setCurrentSlide((prev) => prev + 1);
     };
 
-    const stopAllTts = () => {
+    const stopSlideAudios = (reset = true) => {
         if (audioPrimaryRef.current) {
             audioPrimaryRef.current.pause();
-            audioPrimaryRef.current.currentTime = 0;
+            if (reset) {
+                audioPrimaryRef.current.currentTime = 0;
+            }
         }
         if (audioSecondaryRef.current) {
             audioSecondaryRef.current.pause();
-            audioSecondaryRef.current.currentTime = 0;
+            if (reset) {
+                audioSecondaryRef.current.currentTime = 0;
+            }
         }
+    };
+
+    const stopAllTts = () => {
+        stopSlideAudios(true);
         cancelSpeech();
     };
 
-    const playPrimary = () => {
-        stopAllTts();
-        if (audioPrimaryRef.current) {
-            void audioPrimaryRef.current.play();
-        }
-    };
+    const toggleSlideAudio = (track: "primary" | "secondary") => {
+        cancelSpeech();
 
-    const playSecondary = () => {
-        stopAllTts();
-        if (audioSecondaryRef.current) {
-            void audioSecondaryRef.current.play();
+        const audio =
+            track === "primary" ? audioPrimaryRef.current : audioSecondaryRef.current;
+        const other =
+            track === "primary" ? audioSecondaryRef.current : audioPrimaryRef.current;
+
+        if (!audio) return;
+
+        if (other && !other.paused) {
+            other.pause();
+            other.currentTime = 0;
         }
+
+        if (!audio.paused) {
+            audio.pause();
+            return;
+        }
+
+        if (audio.ended) {
+            audio.currentTime = 0;
+        }
+
+        void audio.play();
     };
 
     const clearWordPopoverCloseTimer = () => {
@@ -295,18 +359,34 @@ const ReadPage = () => {
     };
 
     const handleTokenBookmark = async (tokenId: number) => {
-        if (bookmarkedTokenIds.includes(tokenId)) {
-            setBookmarkedTokenIds((prev) => prev.filter((id) => id !== tokenId));
-            return;
-        }
-
         if (!story || !slide || savingTokenIds.includes(tokenId)) return;
 
         const token = slide.tokens.find((t) => t.id === tokenId);
         if (!token) return;
 
+        const isBookmarked = bookmarkedTokenIds.includes(tokenId);
+        const vocabularyId = savedVocabularyByTokenId[tokenId];
+
         setSavingTokenIds((prev) => [...prev, tokenId]);
         try {
+            if (isBookmarked) {
+                if (vocabularyId == null) {
+                    setBookmarkedTokenIds((prev) => prev.filter((id) => id !== tokenId));
+                    return;
+                }
+
+                const response = await deleteVocabulary(vocabularyId);
+                if (response.success) {
+                    setBookmarkedTokenIds((prev) => prev.filter((id) => id !== tokenId));
+                    setSavedVocabularyByTokenId((prev) => {
+                        const next = { ...prev };
+                        delete next[tokenId];
+                        return next;
+                    });
+                }
+                return;
+            }
+
             const response = await saveVocabulary({
                 tokenId: token.id,
                 slideId: slide.slideId,
@@ -317,14 +397,18 @@ const ReadPage = () => {
                 sourceLanguage: token.sourceLanguage,
                 targetLanguage: token.targetLanguage,
             });
-            
+
             if (response.success) {
                 setBookmarkedTokenIds((prev) =>
                     prev.includes(tokenId) ? prev : [...prev, tokenId],
                 );
+                setSavedVocabularyByTokenId((prev) => ({
+                    ...prev,
+                    [tokenId]: response.data.vocabularyId,
+                }));
             }
-        } catch(error) {
-            console.error("saveVocabulary error", error);
+        } catch (error) {
+            console.error("handleTokenBookmark error", error);
         } finally {
             setSavingTokenIds((prev) => prev.filter((id) => id !== tokenId));
         }
@@ -355,7 +439,6 @@ const ReadPage = () => {
         setOpenTokenContext(null);
         setPopoverAnchor(null);
         activeWordAnchorRef.current = null;
-        setBookmarkedTokenIds([]);
         setSavingTokenIds([]);
         clearWordPopoverCloseTimer();
     }, [slide?.slideId]);
@@ -423,8 +506,10 @@ const ReadPage = () => {
                     </LeftContainer>
                     <RightContainer>
                         <PageIndicator>{pageLabel}</PageIndicator>
-                        <IconButton type="button"><Icon src={LibraryIcon} alt="" /></IconButton>
-                        <IconButton type="button"><Icon src={SettingIcon} alt="" /></IconButton>
+                        <IconButton type="button" onClick={() => navigate("/lib")}>
+                            <Icon src={LibraryIcon} alt="" />
+                        </IconButton>
+                        {/* <IconButton type="button"><Icon src={SettingIcon} alt="" /></IconButton> */}
                     </RightContainer>
                 </InfoContainer>
 
@@ -509,7 +594,11 @@ const ReadPage = () => {
                                                         ),
                                                 )}
                                             </LangText>
-                                            <SpeakerButton type="button" aria-label="" onClick={playPrimary}>
+                                            <SpeakerButton
+                                                type="button"
+                                                aria-label="한국어 음성 재생"
+                                                onClick={() => toggleSlideAudio("primary")}
+                                            >
                                                 <Image height={36} src={SpeakerIcon} alt="" />
                                             </SpeakerButton>
                                         </Lang>
@@ -550,7 +639,11 @@ const ReadPage = () => {
                                                     ),
                                                 )}
                                             </LangText>
-                                            <SpeakerButton type="button" aria-label="" onClick={playSecondary}>
+                                            <SpeakerButton
+                                                type="button"
+                                                aria-label="외국어 음성 재생"
+                                                onClick={() => toggleSlideAudio("secondary")}
+                                            >
                                                 <Image height={36} src={SpeakerIcon} alt="" />
                                             </SpeakerButton>
                                         </Lang>
@@ -609,7 +702,9 @@ const ReadPage = () => {
                                 onClick={() => void handleTokenBookmark(openToken.id)}
                             >
                                 {savingTokenIds.includes(openToken.id)
-                                    ? "저장 중..."
+                                    ? bookmarkedTokenIds.includes(openToken.id)
+                                        ? "삭제 중..."
+                                        : "저장 중..."
                                     : bookmarkedTokenIds.includes(openToken.id)
                                       ? "저장됨"
                                       : "단어 저장"}

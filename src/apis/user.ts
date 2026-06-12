@@ -60,6 +60,15 @@ const LANGUAGE_META: Record<string, { code: LanguageCode; country: string }> = {
     베트남어: { code: "VI", country: "VN" },
 };
 
+const PARENT_COUNTRY_LABEL: Record<string, string> = Object.fromEntries(
+    Object.entries(LANGUAGE_META).map(([label, { country }]) => [country, label]),
+);
+
+export function parentCountryToKorean(country: string | undefined): string | null {
+    if (!country?.trim()) return null;
+    return PARENT_COUNTRY_LABEL[country.trim().toUpperCase()] ?? null;
+}
+
 const STORY_PREFERENCE_MAP: Record<string, StoryPreference> = {
     "포근포근 안아주는 이야기": "WARM_HUG",
     "신나는 모험 이야기": "FUN_ADVENTURE",
@@ -93,6 +102,37 @@ export function uiProficiencyToApi(key: string | null): ProficiencyLevel | undef
     };
     return map[key];
 }
+
+export function apiProficiencyToUi(level: ProficiencyLevel): string {
+    const map: Record<ProficiencyLevel, string> = {
+        EGG: "egg",
+        LARVA: "larva",
+        PUPA: "pupa",
+        BEE: "bee",
+    };
+    return map[level];
+}
+
+const STORY_PREFERENCE_REVERSE: Record<Exclude<StoryPreference, "CUSTOM">, string> = {
+    WARM_HUG: "포근포근 안아주는 이야기",
+    FUN_ADVENTURE: "신나는 모험 이야기",
+    DAILY_LIFE: "오늘 하루를 닮은 이야기",
+};
+
+export const EMPTY_SIGN_UP_FORM: SignUpFormState = {
+    name: "",
+    age: "1",
+    livingWith: [],
+    livingWithOther: "",
+    protagonistLanguages: "",
+    guardianLanguages: "",
+    listeningLevel: null,
+    speakingLevel: null,
+    listeningLevel2: null,
+    speakingLevel2: null,
+    storyPreference: null,
+    storyPreferenceOther: "",
+};
 
 function parseLanguage(input: string): {
     code: LanguageCode;
@@ -247,17 +287,6 @@ export function getCurrentUser() {
     return apiFetch("/api/users/me") as Promise<{ data: UserResponse }>;
 }
 
-export type CreateProfileResponse = {
-    profileId: number;
-};
-
-export function createUserProfile(body: CreateProfileRequest) {
-    return apiFetch("/api/users/profile", {
-        method: "POST",
-        body: JSON.stringify(body),
-    }) as Promise<{ data: CreateProfileResponse }>;
-}
-
 export type MyPageAccountInfo = {
     userId: number;
     email: string;
@@ -294,6 +323,90 @@ export type MyPageProfile = {
     createdAt: string;
     updatedAt: string;
 };
+
+/** POST /api/users/profile/onboarding — 온보딩 프로필 생성 */
+export function createUserProfile(body: CreateProfileRequest) {
+    return apiFetch("/api/users/profile/onboarding", {
+        method: "POST",
+        body: JSON.stringify(body),
+    }) as Promise<{ data: MyPageProfile }>;
+}
+
+export function profileToSignUpFormState(profile: MyPageProfile): SignUpFormState {
+    const livingWith: string[] = [];
+    let livingWithOther = "";
+
+    switch (profile.familyStructure) {
+        case "TWO_PARENTS":
+            livingWith.push("엄마", "아빠");
+            break;
+        case "ONE_PARENT":
+            livingWith.push("엄마");
+            break;
+        case "CUSTOM":
+            livingWithOther = profile.customFamilyStructure?.trim() ?? "";
+            break;
+        case "EXTENDED_FAMILY":
+        case "SECRET":
+        default:
+            break;
+    }
+
+    let storyPreference: string | null = null;
+    let storyPreferenceOther = "";
+    if (profile.storyPreference === "CUSTOM") {
+        storyPreferenceOther = profile.customStoryPreference?.trim() ?? "";
+    } else {
+        storyPreference = STORY_PREFERENCE_REVERSE[profile.storyPreference];
+    }
+
+    return {
+        name: profile.childName,
+        age: String(profile.childAge),
+        livingWith,
+        livingWithOther,
+        protagonistLanguages: profile.firstLanguageDisplay,
+        guardianLanguages: profile.secondLanguageDisplay,
+        listeningLevel: apiProficiencyToUi(profile.firstLanguageListening),
+        speakingLevel: apiProficiencyToUi(profile.firstLanguageSpeaking),
+        listeningLevel2: apiProficiencyToUi(profile.secondLanguageListening),
+        speakingLevel2: apiProficiencyToUi(profile.secondLanguageSpeaking),
+        storyPreference,
+        storyPreferenceOther,
+    };
+}
+
+export type UpdateProfileRequest = CreateProfileRequest & {
+    childAge: number;
+};
+
+export function buildUpdateProfileRequest(
+    form: SignUpFormState,
+    existing?: Pick<MyPageProfile, "childNationality" | "parentCountry">,
+): UpdateProfileRequest {
+    const body = buildCreateProfileRequest(form);
+    const updateBody: UpdateProfileRequest = {
+        ...body,
+        childAge: Number(form.age),
+    };
+
+    if (!updateBody.childNationality && existing?.childNationality) {
+        updateBody.childNationality = existing.childNationality;
+    }
+    if (!updateBody.parentCountry && existing?.parentCountry) {
+        updateBody.parentCountry = existing.parentCountry;
+    }
+
+    return updateBody;
+}
+
+/** PUT /api/users/profile/{profileId} — 프로필 수정 */
+export function updateUserProfile(profileId: number, body: UpdateProfileRequest) {
+    return apiFetch(`/api/users/profile/${profileId}`, {
+        method: "PUT",
+        body: JSON.stringify(body),
+    }) as Promise<{ data: MyPageProfile }>;
+}
 
 export type MyPageUsageStatus = {
     honeyJarCount: number;
@@ -378,25 +491,6 @@ export function formatLanguageProficiencyLine(
     return `${languageDisplay} | ${PROFICIENCY_STAGE_LABEL[proficiency]} 단계`;
 }
 
-export function formatGuardianLanguageLine(profile: MyPageProfile): string {
-    const guardianLang = profile.secondLanguageDisplay;
-    const childLang = profile.firstLanguageDisplay;
-
-    switch (profile.familyStructure) {
-        case "TWO_PARENTS":
-            return `엄마 (${guardianLang}), 아빠 (${childLang})`;
-        case "ONE_PARENT":
-            return `보호자 (${guardianLang})`;
-        case "CUSTOM":
-            return profile.customFamilyStructure?.trim() || guardianLang;
-        case "SECRET":
-            return "가족 구성 비공개";
-        case "EXTENDED_FAMILY":
-        default:
-            return `가족 (${guardianLang})`;
-    }
-}
-
 export function formatStoryPreferenceTag(profile: MyPageProfile): string {
     if (profile.storyPreference === "CUSTOM") {
         const custom = profile.customStoryPreference?.trim();
@@ -407,6 +501,8 @@ export function formatStoryPreferenceTag(profile: MyPageProfile): string {
 }
 
 export function buildMyPageInfoRows(profile: MyPageProfile) {
+    const guardianLanguage = parentCountryToKorean(profile.parentCountry);
+
     return [
         {
             label: "사용 언어",
@@ -424,7 +520,7 @@ export function buildMyPageInfoRows(profile: MyPageProfile) {
         },
         {
             label: "보호자 언어",
-            lines: [formatGuardianLanguageLine(profile)],
+            lines: guardianLanguage ? [guardianLanguage] : [],
             variant: "default" as const,
         },
         {
