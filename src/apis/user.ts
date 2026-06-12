@@ -94,6 +94,37 @@ export function uiProficiencyToApi(key: string | null): ProficiencyLevel | undef
     return map[key];
 }
 
+export function apiProficiencyToUi(level: ProficiencyLevel): string {
+    const map: Record<ProficiencyLevel, string> = {
+        EGG: "egg",
+        LARVA: "larva",
+        PUPA: "pupa",
+        BEE: "bee",
+    };
+    return map[level];
+}
+
+const STORY_PREFERENCE_REVERSE: Record<Exclude<StoryPreference, "CUSTOM">, string> = {
+    WARM_HUG: "포근포근 안아주는 이야기",
+    FUN_ADVENTURE: "신나는 모험 이야기",
+    DAILY_LIFE: "오늘 하루를 닮은 이야기",
+};
+
+export const EMPTY_SIGN_UP_FORM: SignUpFormState = {
+    name: "",
+    age: "1",
+    livingWith: [],
+    livingWithOther: "",
+    protagonistLanguages: "",
+    guardianLanguages: "",
+    listeningLevel: null,
+    speakingLevel: null,
+    listeningLevel2: null,
+    speakingLevel2: null,
+    storyPreference: null,
+    storyPreferenceOther: "",
+};
+
 function parseLanguage(input: string): {
     code: LanguageCode;
     custom?: string;
@@ -294,6 +325,71 @@ export type MyPageProfile = {
     createdAt: string;
     updatedAt: string;
 };
+
+export function profileToSignUpFormState(profile: MyPageProfile): SignUpFormState {
+    const livingWith: string[] = [];
+    let livingWithOther = "";
+
+    switch (profile.familyStructure) {
+        case "TWO_PARENTS":
+            livingWith.push("엄마", "아빠");
+            break;
+        case "ONE_PARENT":
+            livingWith.push("엄마");
+            break;
+        case "CUSTOM":
+            livingWithOther = profile.customFamilyStructure?.trim() ?? "";
+            break;
+        case "EXTENDED_FAMILY":
+        case "SECRET":
+        default:
+            break;
+    }
+
+    let storyPreference: string | null = null;
+    let storyPreferenceOther = "";
+    if (profile.storyPreference === "CUSTOM") {
+        storyPreferenceOther = profile.customStoryPreference?.trim() ?? "";
+    } else {
+        storyPreference = STORY_PREFERENCE_REVERSE[profile.storyPreference];
+    }
+
+    return {
+        name: profile.childName,
+        age: String(profile.childAge),
+        livingWith,
+        livingWithOther,
+        protagonistLanguages: profile.firstLanguageDisplay,
+        guardianLanguages: profile.secondLanguageDisplay,
+        listeningLevel: apiProficiencyToUi(profile.firstLanguageListening),
+        speakingLevel: apiProficiencyToUi(profile.firstLanguageSpeaking),
+        listeningLevel2: apiProficiencyToUi(profile.secondLanguageListening),
+        speakingLevel2: apiProficiencyToUi(profile.secondLanguageSpeaking),
+        storyPreference,
+        storyPreferenceOther,
+    };
+}
+
+export function buildUpdateProfileRequest(
+    form: SignUpFormState,
+    existing?: Pick<MyPageProfile, "childNationality" | "parentCountry">,
+): CreateProfileRequest {
+    const body = buildCreateProfileRequest(form);
+    if (!body.childNationality && existing?.childNationality) {
+        body.childNationality = existing.childNationality;
+    }
+    if (!body.parentCountry && existing?.parentCountry) {
+        body.parentCountry = existing.parentCountry;
+    }
+    return body;
+}
+
+export function updateUserProfile(profileId: number, body: CreateProfileRequest) {
+    return apiFetch(`/api/users/profile/${profileId}`, {
+        method: "PUT",
+        body: JSON.stringify(body),
+    }) as Promise<{ data: MyPageProfile }>;
+}
 
 export type MyPageUsageStatus = {
     honeyJarCount: number;
