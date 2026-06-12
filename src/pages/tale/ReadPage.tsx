@@ -17,7 +17,7 @@ import ArrowRightIcon from "../../assets/images/tale/arrow-right.svg";
 import SpeakerIcon from "../../assets/images/tale/speaker.svg";
 import BookmarkIcon from "../../assets/images/tale/bookmark.svg";
 import LibraryIcon from "../../assets/images/icon/library.svg";
-import SettingIcon from "../../assets/images/icon/setting.svg";
+// import SettingIcon from "../../assets/images/icon/setting.svg";
 import { cancelSpeech, speakText } from "../../lib/speechSynthesis";
 
 type ReadLocationState = {
@@ -444,8 +444,10 @@ const ReadPage = () => {
                     </LeftContainer>
                     <RightContainer>
                         <PageIndicator>{pageLabel}</PageIndicator>
-                        <IconButton type="button"><Icon src={LibraryIcon} alt="" /></IconButton>
-                        <IconButton type="button"><Icon src={SettingIcon} alt="" /></IconButton>
+                        <IconButton type="button" onClick={() => navigate("/library")}>
+                            <Icon src={LibraryIcon} alt="" />
+                        </IconButton>
+                        {/* <IconButton type="button"><Icon src={SettingIcon} alt="" /></IconButton> */}
                     </RightContainer>
                 </InfoContainer>
 
