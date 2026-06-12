@@ -334,3 +334,11 @@ MoreTale-frontend
 ---
 
 ## ✅ Main Contributions
+
+- React, TypeScript 기반 프론트엔드 구조 설계
+- Styled Components 기반 UI 컴포넌트 및 디자인 시스템 구축
+- Google OAuth2 로그인 및 JWT 기반 인증 흐름 구현
+- 이중언어 동화 생성, 단어 학습, 퀴즈 플로우 구현
+- Web Speech API 기반 단어 TTS 기능 구현
+- Backend·AI 서버 API 연동 및 데이터 처리 로직 구현
+- Vercel 기반 CI/CD 및 배포 환경 구성
