@@ -285,24 +285,13 @@ export function buildCreateProfileRequest(form: SignUpFormState): CreateProfileR
     if (secondLang.custom) body.customSecondLanguage = secondLang.custom;
     if (customStoryPreference) body.customStoryPreference = customStoryPreference;
     if (firstLang.country) body.childNationality = firstLang.country;
-    body.parentCountry = secondLang.code;
+    if (secondLang.country) body.parentCountry = secondLang.country;
 
     return body;
 }
 
 export function getCurrentUser() {
     return apiFetch("/api/users/me") as Promise<{ data: UserResponse }>;
-}
-
-export type CreateProfileResponse = {
-    profileId: number;
-};
-
-export function createUserProfile(body: CreateProfileRequest) {
-    return apiFetch("/api/users/profile", {
-        method: "POST",
-        body: JSON.stringify(body),
-    }) as Promise<{ data: CreateProfileResponse }>;
 }
 
 export type MyPageAccountInfo = {
@@ -341,6 +330,14 @@ export type MyPageProfile = {
     createdAt: string;
     updatedAt: string;
 };
+
+/** POST /api/users/profile/onboarding — 온보딩 프로필 생성 */
+export function createUserProfile(body: CreateProfileRequest) {
+    return apiFetch("/api/users/profile/onboarding", {
+        method: "POST",
+        body: JSON.stringify(body),
+    }) as Promise<{ data: MyPageProfile }>;
+}
 
 export function profileToSignUpFormState(profile: MyPageProfile): SignUpFormState {
     const livingWith: string[] = [];
