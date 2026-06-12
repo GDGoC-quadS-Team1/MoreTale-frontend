@@ -214,30 +214,51 @@ const ReadPage = () => {
         setCurrentSlide((prev) => prev + 1);
     };
 
-    const stopAllTts = () => {
+    const stopSlideAudios = (reset = true) => {
         if (audioPrimaryRef.current) {
             audioPrimaryRef.current.pause();
-            audioPrimaryRef.current.currentTime = 0;
+            if (reset) {
+                audioPrimaryRef.current.currentTime = 0;
+            }
         }
         if (audioSecondaryRef.current) {
             audioSecondaryRef.current.pause();
-            audioSecondaryRef.current.currentTime = 0;
+            if (reset) {
+                audioSecondaryRef.current.currentTime = 0;
+            }
         }
+    };
+
+    const stopAllTts = () => {
+        stopSlideAudios(true);
         cancelSpeech();
     };
 
-    const playPrimary = () => {
-        stopAllTts();
-        if (audioPrimaryRef.current) {
-            void audioPrimaryRef.current.play();
-        }
-    };
+    const toggleSlideAudio = (track: "primary" | "secondary") => {
+        cancelSpeech();
 
-    const playSecondary = () => {
-        stopAllTts();
-        if (audioSecondaryRef.current) {
-            void audioSecondaryRef.current.play();
+        const audio =
+            track === "primary" ? audioPrimaryRef.current : audioSecondaryRef.current;
+        const other =
+            track === "primary" ? audioSecondaryRef.current : audioPrimaryRef.current;
+
+        if (!audio) return;
+
+        if (other && !other.paused) {
+            other.pause();
+            other.currentTime = 0;
         }
+
+        if (!audio.paused) {
+            audio.pause();
+            return;
+        }
+
+        if (audio.ended) {
+            audio.currentTime = 0;
+        }
+
+        void audio.play();
     };
 
     const clearWordPopoverCloseTimer = () => {
@@ -509,7 +530,11 @@ const ReadPage = () => {
                                                         ),
                                                 )}
                                             </LangText>
-                                            <SpeakerButton type="button" aria-label="" onClick={playPrimary}>
+                                            <SpeakerButton
+                                                type="button"
+                                                aria-label="한국어 음성 재생"
+                                                onClick={() => toggleSlideAudio("primary")}
+                                            >
                                                 <Image height={36} src={SpeakerIcon} alt="" />
                                             </SpeakerButton>
                                         </Lang>
@@ -550,7 +575,11 @@ const ReadPage = () => {
                                                     ),
                                                 )}
                                             </LangText>
-                                            <SpeakerButton type="button" aria-label="" onClick={playSecondary}>
+                                            <SpeakerButton
+                                                type="button"
+                                                aria-label="외국어 음성 재생"
+                                                onClick={() => toggleSlideAudio("secondary")}
+                                            >
                                                 <Image height={36} src={SpeakerIcon} alt="" />
                                             </SpeakerButton>
                                         </Lang>
