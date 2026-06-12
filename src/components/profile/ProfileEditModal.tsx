@@ -32,7 +32,7 @@ const ProfileEditModal = ({ profile, isOpen, onClose, onUpdated }: ProfileEditMo
             return;
         }
 
-        const confirmed = window.confirm("수정하시겠습니까?");
+        const confirmed = window.confirm("[moretale]\n프로필을 수정하시겠습니까?");
         if (!confirmed) return;
 
         setSubmitError(null);
@@ -73,19 +73,18 @@ const Overlay = styled.div`
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(0, 0, 0, 0.45);
-    padding: 40px;
+    background: rgba(0, 0, 0, 0.5);
     box-sizing: border-box;
 `;
 
 const ModalContainer = styled.div`
     background: #FFFFFF;
     width: 100%;
-    max-width: 720px;
-    max-height: 90dvh;
-    padding: 40px 48px;
+    max-width: 60dvw;
+    max-height: 80dvh;
+    padding: 40px 80px;
     border-radius: 12px;
     box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.15);
-    overflow-y: auto;
+    overflow: hidden;
     box-sizing: border-box;
 `;

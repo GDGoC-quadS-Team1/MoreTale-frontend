@@ -459,7 +459,7 @@ const NameRow = styled.div`
 const Name = styled.p`
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
     margin: 0;
     font-size: 36px;
     font-weight: 900;
@@ -539,8 +539,8 @@ const EditProfileButton = styled.button`
 `;
 
 const PencilImg = styled.img`
-    width: 29px;
-    height: 29px;
+    width: 22px;
+    height: 22px;
     display: block;
 `;
 
