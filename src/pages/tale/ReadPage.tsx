@@ -4,7 +4,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import styled from "styled-components";
 import Header from "../../components/Header";
 import { getStoryDetail, type StoryDetail, type StoryToken } from "../../apis/stories";
-import { deleteVocabulary, saveVocabulary } from "../../apis/vocabulary";
+import { deleteVocabulary, getVocabulary, saveVocabulary } from "../../apis/vocabulary";
 import {
     completeStory,
     languageCodeToFlag,
@@ -164,6 +164,46 @@ const ReadPage = () => {
             cancelled = true;
         };
     }, [storyId, locationState?.startFromLast]);
+
+    useEffect(() => {
+        if (story?.storyId == null) return;
+
+        let cancelled = false;
+
+        (async () => {
+            try {
+                const savedMap: Record<number, number> = {};
+                let page = 0;
+                let hasMore = true;
+
+                while (hasMore && !cancelled) {
+                    const { data } = await getVocabulary({
+                        page,
+                        size: 50,
+                        storyId: story.storyId,
+                    });
+
+                    for (const item of data.content) {
+                        savedMap[item.tokenId] = item.vocabularyId;
+                    }
+
+                    hasMore = !data.last;
+                    page += 1;
+                }
+
+                if (!cancelled) {
+                    setBookmarkedTokenIds(Object.keys(savedMap).map(Number));
+                    setSavedVocabularyByTokenId(savedMap);
+                }
+            } catch {
+                
+            }
+        })();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [story?.storyId]);
 
     const storySlides = useMemo(() => {
         if (!story?.slides.length) return [];
@@ -399,8 +439,6 @@ const ReadPage = () => {
         setOpenTokenContext(null);
         setPopoverAnchor(null);
         activeWordAnchorRef.current = null;
-        setBookmarkedTokenIds([]);
-        setSavedVocabularyByTokenId({});
         setSavingTokenIds([]);
         clearWordPopoverCloseTimer();
     }, [slide?.slideId]);
