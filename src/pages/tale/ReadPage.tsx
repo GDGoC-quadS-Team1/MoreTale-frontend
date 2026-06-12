@@ -4,7 +4,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import styled from "styled-components";
 import Header from "../../components/Header";
 import { getStoryDetail, type StoryDetail, type StoryToken } from "../../apis/stories";
-import { saveVocabulary } from "../../apis/vocabulary";
+import { deleteVocabulary, saveVocabulary } from "../../apis/vocabulary";
 import {
     completeStory,
     languageCodeToFlag,
@@ -118,6 +118,9 @@ const ReadPage = () => {
     const [popoverPlacement, setPopoverPlacement] =
         useState<WordPopoverPlacement>("top");
     const [bookmarkedTokenIds, setBookmarkedTokenIds] = useState<number[]>([]);
+    const [savedVocabularyByTokenId, setSavedVocabularyByTokenId] = useState<
+        Record<number, number>
+    >({});
     const [savingTokenIds, setSavingTokenIds] = useState<number[]>([]);
 
     useEffect(() => {
@@ -316,18 +319,34 @@ const ReadPage = () => {
     };
 
     const handleTokenBookmark = async (tokenId: number) => {
-        if (bookmarkedTokenIds.includes(tokenId)) {
-            setBookmarkedTokenIds((prev) => prev.filter((id) => id !== tokenId));
-            return;
-        }
-
         if (!story || !slide || savingTokenIds.includes(tokenId)) return;
 
         const token = slide.tokens.find((t) => t.id === tokenId);
         if (!token) return;
 
+        const isBookmarked = bookmarkedTokenIds.includes(tokenId);
+        const vocabularyId = savedVocabularyByTokenId[tokenId];
+
         setSavingTokenIds((prev) => [...prev, tokenId]);
         try {
+            if (isBookmarked) {
+                if (vocabularyId == null) {
+                    setBookmarkedTokenIds((prev) => prev.filter((id) => id !== tokenId));
+                    return;
+                }
+
+                const response = await deleteVocabulary(vocabularyId);
+                if (response.success) {
+                    setBookmarkedTokenIds((prev) => prev.filter((id) => id !== tokenId));
+                    setSavedVocabularyByTokenId((prev) => {
+                        const next = { ...prev };
+                        delete next[tokenId];
+                        return next;
+                    });
+                }
+                return;
+            }
+
             const response = await saveVocabulary({
                 tokenId: token.id,
                 slideId: slide.slideId,
@@ -338,14 +357,18 @@ const ReadPage = () => {
                 sourceLanguage: token.sourceLanguage,
                 targetLanguage: token.targetLanguage,
             });
-            
+
             if (response.success) {
                 setBookmarkedTokenIds((prev) =>
                     prev.includes(tokenId) ? prev : [...prev, tokenId],
                 );
+                setSavedVocabularyByTokenId((prev) => ({
+                    ...prev,
+                    [tokenId]: response.data.vocabularyId,
+                }));
             }
-        } catch(error) {
-            console.error("saveVocabulary error", error);
+        } catch (error) {
+            console.error("handleTokenBookmark error", error);
         } finally {
             setSavingTokenIds((prev) => prev.filter((id) => id !== tokenId));
         }
@@ -377,6 +400,7 @@ const ReadPage = () => {
         setPopoverAnchor(null);
         activeWordAnchorRef.current = null;
         setBookmarkedTokenIds([]);
+        setSavedVocabularyByTokenId({});
         setSavingTokenIds([]);
         clearWordPopoverCloseTimer();
     }, [slide?.slideId]);
@@ -640,7 +664,9 @@ const ReadPage = () => {
                                 onClick={() => void handleTokenBookmark(openToken.id)}
                             >
                                 {savingTokenIds.includes(openToken.id)
-                                    ? "저장 중..."
+                                    ? bookmarkedTokenIds.includes(openToken.id)
+                                        ? "삭제 중..."
+                                        : "저장 중..."
                                     : bookmarkedTokenIds.includes(openToken.id)
                                       ? "저장됨"
                                       : "단어 저장"}
