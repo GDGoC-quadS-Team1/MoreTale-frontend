@@ -370,21 +370,32 @@ export function profileToSignUpFormState(profile: MyPageProfile): SignUpFormStat
     };
 }
 
+export type UpdateProfileRequest = CreateProfileRequest & {
+    childAge: number;
+};
+
 export function buildUpdateProfileRequest(
     form: SignUpFormState,
     existing?: Pick<MyPageProfile, "childNationality" | "parentCountry">,
-): CreateProfileRequest {
+): UpdateProfileRequest {
     const body = buildCreateProfileRequest(form);
-    if (!body.childNationality && existing?.childNationality) {
-        body.childNationality = existing.childNationality;
+    const updateBody: UpdateProfileRequest = {
+        ...body,
+        childAge: Number(form.age),
+    };
+
+    if (!updateBody.childNationality && existing?.childNationality) {
+        updateBody.childNationality = existing.childNationality;
     }
-    if (!body.parentCountry && existing?.parentCountry) {
-        body.parentCountry = existing.parentCountry;
+    if (!updateBody.parentCountry && existing?.parentCountry) {
+        updateBody.parentCountry = existing.parentCountry;
     }
-    return body;
+
+    return updateBody;
 }
 
-export function updateUserProfile(profileId: number, body: CreateProfileRequest) {
+/** PUT /api/users/profile/{profileId} — 프로필 수정 */
+export function updateUserProfile(profileId: number, body: UpdateProfileRequest) {
     return apiFetch(`/api/users/profile/${profileId}`, {
         method: "PUT",
         body: JSON.stringify(body),
