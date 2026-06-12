@@ -408,7 +408,7 @@ const ProfileCard = styled.section`
 `;
 
 const ProfileImgContainer = styled.div`
-    padding-bottom: 14px;
+    padding-bottom: 0px;
 `;
 
 const AvatarWrap = styled.div`
@@ -425,6 +425,7 @@ const Avatar = styled.img`
 `;
 
 const PhotoChangeButton = styled.button`
+    display: none;
     position: absolute;
     bottom: 0;
     left: 50%;

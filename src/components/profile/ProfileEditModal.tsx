@@ -85,6 +85,6 @@ const ModalContainer = styled.div`
     padding: 40px 80px;
     border-radius: 12px;
     box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.15);
-    overflow: hidden;
+    overflow: auto;
     box-sizing: border-box;
 `;

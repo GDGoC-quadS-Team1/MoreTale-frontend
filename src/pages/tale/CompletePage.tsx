@@ -85,14 +85,14 @@ const CompletePage = () => {
                 if (!cancelled) {
                     setStoryInit(data);
                     if (!data.storyId) {
-                        setError("생성된 동화를 찾을 수 없습니다. 새 이야기를 만들어 주세요.");
+                        setError("생성된 동화를 찾을 수 없습니다. 다시 시도해 주세요.");
                     } else {
                         setError(null);
                     }
                 }
             } catch {
                 if (!cancelled) {
-                    setError("동화 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.");
+                    setError("동화 정보를 불러오지 못했습니다. 다시 시도해 주세요.");
                 }
             } finally {
                 if (!cancelled) {
@@ -150,7 +150,7 @@ const CompletePage = () => {
             clearTaleGenerationSession();
             navigate("/lib");
         } catch {
-            setSaveError("도서관에 저장하지 못했습니다. 잠시 후 다시 시도해주세요.");
+            setSaveError("도서관에 저장하지 못했습니다. 다시 시도해 주세요.");
         } finally {
             setIsSaving(false);
         }
@@ -163,7 +163,7 @@ const CompletePage = () => {
                 clearTaleGenerationSession();
                 navigate(`/tale/read/${storyId}`);
             } catch {
-                setError("이야기를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.");
+                setError("이야기를 불러오지 못했습니다. 다시 시도해 주세요.");
             }
             return;
         }
