@@ -93,17 +93,15 @@ const BookCard = ({
                     {/* 생성일 & 단어장 */}
                     <Footer>
                         <DateText>{date}</DateText>
-                        {listVariant === "quiz" ? (
-                            <WordButton
-                                type="button"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    navigateToVocabulary();
-                                }}
-                            >
-                                <WordIcon src={wordIcon} alt="" />
-                            </WordButton>
-                        ) : null}
+                        <WordButton
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                navigateToVocabulary();
+                            }}
+                        >
+                            <WordIcon src={wordIcon} alt="" />
+                        </WordButton>
                     </Footer>
                 </Body>
             </CardContent>

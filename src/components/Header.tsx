@@ -120,7 +120,7 @@ const Menu = styled.button<{ $active?: boolean; $clickable?: boolean }>`
     font-style: normal;
     font-weight: 900;
     line-height: 24px;
-    padding: 5px 12px 3px;
+    padding: 5px 12px;
     border: none;
     border-radius: 3px;
     background: ${({ $active }) => ($active ? '#1F1F1F' : 'transparent')};
