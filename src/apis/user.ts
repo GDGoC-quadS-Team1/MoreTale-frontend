@@ -60,6 +60,22 @@ const LANGUAGE_META: Record<string, { code: LanguageCode; country: string }> = {
     베트남어: { code: "VI", country: "VN" },
 };
 
+const LANGUAGE_CODE_LABEL: Record<LanguageCode, string> = {
+    KO: "한국어",
+    EN: "영어",
+    JA: "일본어",
+    ZH: "중국어",
+    ES: "스페인어",
+    VI: "베트남어",
+    OTHER: "기타",
+};
+
+export function languageCodeToKorean(code: string | undefined): string | null {
+    if (!code?.trim()) return null;
+    const normalized = code.trim().toUpperCase() as LanguageCode;
+    return LANGUAGE_CODE_LABEL[normalized] ?? null;
+}
+
 const STORY_PREFERENCE_MAP: Record<string, StoryPreference> = {
     "포근포근 안아주는 이야기": "WARM_HUG",
     "신나는 모험 이야기": "FUN_ADVENTURE",
@@ -269,7 +285,7 @@ export function buildCreateProfileRequest(form: SignUpFormState): CreateProfileR
     if (secondLang.custom) body.customSecondLanguage = secondLang.custom;
     if (customStoryPreference) body.customStoryPreference = customStoryPreference;
     if (firstLang.country) body.childNationality = firstLang.country;
-    if (secondLang.country) body.parentCountry = secondLang.country;
+    body.parentCountry = secondLang.code;
 
     return body;
 }
@@ -495,6 +511,8 @@ export function formatStoryPreferenceTag(profile: MyPageProfile): string {
 }
 
 export function buildMyPageInfoRows(profile: MyPageProfile) {
+    const guardianLanguage = languageCodeToKorean(profile.parentCountry);
+
     return [
         {
             label: "사용 언어",
@@ -512,7 +530,7 @@ export function buildMyPageInfoRows(profile: MyPageProfile) {
         },
         {
             label: "보호자 언어",
-            lines: profile.parentCountry ? [profile.parentCountry] : [],
+            lines: guardianLanguage ? [guardianLanguage] : [],
             variant: "default" as const,
         },
         {
