@@ -485,25 +485,6 @@ export function formatLanguageProficiencyLine(
     return `${languageDisplay} | ${PROFICIENCY_STAGE_LABEL[proficiency]} 단계`;
 }
 
-export function formatGuardianLanguageLine(profile: MyPageProfile): string {
-    const guardianLang = profile.secondLanguageDisplay;
-    const childLang = profile.firstLanguageDisplay;
-
-    switch (profile.familyStructure) {
-        case "TWO_PARENTS":
-            return `엄마 (${guardianLang}), 아빠 (${childLang})`;
-        case "ONE_PARENT":
-            return `보호자 (${guardianLang})`;
-        case "CUSTOM":
-            return profile.customFamilyStructure?.trim() || guardianLang;
-        case "SECRET":
-            return "가족 구성 비공개";
-        case "EXTENDED_FAMILY":
-        default:
-            return `가족 (${guardianLang})`;
-    }
-}
-
 export function formatStoryPreferenceTag(profile: MyPageProfile): string {
     if (profile.storyPreference === "CUSTOM") {
         const custom = profile.customStoryPreference?.trim();
@@ -531,7 +512,7 @@ export function buildMyPageInfoRows(profile: MyPageProfile) {
         },
         {
             label: "보호자 언어",
-            lines: [formatGuardianLanguageLine(profile)],
+            lines: profile.parentCountry ? [profile.parentCountry] : [],
             variant: "default" as const,
         },
         {
