@@ -468,7 +468,7 @@ const ReadPage = () => {
                     </LeftContainer>
                     <RightContainer>
                         <PageIndicator>{pageLabel}</PageIndicator>
-                        <IconButton type="button" onClick={() => navigate("/library")}>
+                        <IconButton type="button" onClick={() => navigate("/lib")}>
                             <Icon src={LibraryIcon} alt="" />
                         </IconButton>
                         {/* <IconButton type="button"><Icon src={SettingIcon} alt="" /></IconButton> */}
