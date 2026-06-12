@@ -60,20 +60,13 @@ const LANGUAGE_META: Record<string, { code: LanguageCode; country: string }> = {
     베트남어: { code: "VI", country: "VN" },
 };
 
-const LANGUAGE_CODE_LABEL: Record<LanguageCode, string> = {
-    KO: "한국어",
-    EN: "영어",
-    JA: "일본어",
-    ZH: "중국어",
-    ES: "스페인어",
-    VI: "베트남어",
-    OTHER: "기타",
-};
+const PARENT_COUNTRY_LABEL: Record<string, string> = Object.fromEntries(
+    Object.entries(LANGUAGE_META).map(([label, { country }]) => [country, label]),
+);
 
-export function languageCodeToKorean(code: string | undefined): string | null {
-    if (!code?.trim()) return null;
-    const normalized = code.trim().toUpperCase() as LanguageCode;
-    return LANGUAGE_CODE_LABEL[normalized] ?? null;
+export function parentCountryToKorean(country: string | undefined): string | null {
+    if (!country?.trim()) return null;
+    return PARENT_COUNTRY_LABEL[country.trim().toUpperCase()] ?? null;
 }
 
 const STORY_PREFERENCE_MAP: Record<string, StoryPreference> = {
@@ -508,7 +501,7 @@ export function formatStoryPreferenceTag(profile: MyPageProfile): string {
 }
 
 export function buildMyPageInfoRows(profile: MyPageProfile) {
-    const guardianLanguage = languageCodeToKorean(profile.parentCountry);
+    const guardianLanguage = parentCountryToKorean(profile.parentCountry);
 
     return [
         {
